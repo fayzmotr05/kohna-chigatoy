@@ -30,8 +30,32 @@
   --font-body: var(--font-source-sans);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--color-cream);
   color: var(--color-text-primary);
   font-family: var(--font-body);
+}
+
+/* Hide scrollbar for category bar */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
