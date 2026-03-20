@@ -68,7 +68,7 @@ export default function MenuCard({ item, onAR, onAddToCart }: MenuCardProps) {
         {hasAR && onAR && (
           <button
             onClick={() => onAR(item)}
-            className="absolute bottom-2.5 right-2.5 bg-brown-deep text-tan px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 hover:bg-brown transition-all duration-200 opacity-0 group-hover:opacity-100 sm:opacity-100 shadow-sm"
+            className="absolute bottom-2.5 right-2.5 bg-brown-deep text-tan px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 hover:bg-brown transition-all duration-200 shadow-sm"
           >
             <Box size={13} />
             {t.menu.arView}
