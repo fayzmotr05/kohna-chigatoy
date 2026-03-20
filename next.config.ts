@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/models/:path*',
+        destination: 'https://kvmlolmwypsmirlxqvtn.supabase.co/storage/v1/object/public/media/models/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

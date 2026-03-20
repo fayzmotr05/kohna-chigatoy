@@ -155,6 +155,16 @@ export default function MenuPageClient({ categories, items }: Props) {
     launchNativeAR(item);
   }, []);
 
+  /** Convert Supabase storage URL to our clean domain URL */
+  function cleanModelUrl(url: string): string {
+    const supabasePath = '/storage/v1/object/public/media/models/';
+    const idx = url.indexOf(supabasePath);
+    if (idx !== -1) {
+      return `https://kohnachigatoy.uz/models/${url.substring(idx + supabasePath.length)}`;
+    }
+    return url;
+  }
+
   function launchNativeAR(item: MenuItem) {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -162,11 +172,10 @@ export default function MenuPageClient({ categories, items }: Props) {
     const tg = (window as any).Telegram?.WebApp;
 
     if (isIOS && item.model_usdz_url) {
-      const url = item.model_usdz_url + '#allowsContentScaling=0';
+      const url = cleanModelUrl(item.model_usdz_url) + '#allowsContentScaling=0';
       if (tg) {
         tg.openLink(url, { try_instant_view: false });
       } else {
-        // Native Safari: use <a rel="ar"> for Quick Look
         const a = document.createElement('a');
         a.rel = 'ar';
         a.href = url;
@@ -177,23 +186,22 @@ export default function MenuPageClient({ categories, items }: Props) {
         document.body.removeChild(a);
       }
     } else if (isAndroidDevice && item.model_glb_url) {
-      const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(item.model_glb_url)}&mode=ar_only#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;end;`;
+      const glbUrl = cleanModelUrl(item.model_glb_url);
+      const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_only#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;end;`;
       if (tg) {
         tg.openLink(intentUrl, { try_instant_view: false });
       } else {
         window.location.href = intentUrl;
       }
     } else if (item.model_usdz_url) {
-      // Fallback: open USDZ directly
-      const url = item.model_usdz_url;
+      const url = cleanModelUrl(item.model_usdz_url);
       if (tg) {
         tg.openLink(url, { try_instant_view: false });
       } else {
         window.open(url, '_blank');
       }
     } else if (item.model_glb_url) {
-      // Fallback: open GLB
-      const url = item.model_glb_url;
+      const url = cleanModelUrl(item.model_glb_url);
       if (tg) {
         tg.openLink(url, { try_instant_view: false });
       } else {
