@@ -19,7 +19,7 @@ export default function MenuCard({ item, onAR, onAddToCart }: MenuCardProps) {
   const { t } = useTranslation();
   const { isTelegram } = useTelegram();
   const { addItem } = useCart();
-  const hasAR = item.model_status === 'ready' && item.model_glb_url;
+  const hasAR = item.model_status === 'ready' && (item.model_glb_url || item.model_usdz_url);
 
   const handleAdd = () => {
     if (onAddToCart) {
