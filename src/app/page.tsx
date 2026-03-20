@@ -7,7 +7,6 @@ import AboutSection from '@/components/AboutSection';
 import FeaturedSection from '@/components/FeaturedSection';
 import LocationSection from '@/components/LocationSection';
 import { createServerClient } from '@/lib/supabase';
-import { mockItems } from '@/lib/mock-data';
 import type { MenuItem } from '@/lib/types';
 
 async function getFeaturedItems(): Promise<MenuItem[]> {
@@ -19,10 +18,11 @@ async function getFeaturedItems(): Promise<MenuItem[]> {
       .eq('is_featured', true)
       .eq('is_available', true)
       .limit(6);
-    if (error || !data?.length) throw error;
-    return data as MenuItem[];
-  } catch {
-    return mockItems.filter((i) => i.is_featured);
+    if (error) throw error;
+    return (data as MenuItem[]) || [];
+  } catch (e) {
+    console.error('Failed to fetch featured items:', e);
+    return [];
   }
 }
 
