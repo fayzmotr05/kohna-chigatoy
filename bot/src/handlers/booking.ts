@@ -1,140 +1,179 @@
 import { Bot, InlineKeyboard } from 'grammy';
 import { supabase } from '../supabase';
+import { getRegisteredUser, startRegistration } from '../helpers/registration';
 
 interface BookingSession {
-  step: 'date' | 'time' | 'size' | 'name' | 'phone' | 'confirm';
+  step: 'date' | 'time' | 'size' | 'confirm';
   date?: string;
   time?: string;
-  partySize?: number;
-  customerName?: string;
-  customerPhone?: string;
+  partySize?: string;
 }
 
-const sessions = new Map<number, BookingSession>();
+const bookingSessions = new Map<number, BookingSession>();
+
+export function getBookingSession(chatId: number): BookingSession | undefined {
+  return bookingSessions.get(chatId);
+}
+
+export function clearBookingSession(chatId: number): void {
+  bookingSessions.delete(chatId);
+}
+
+function formatDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-');
+  return `${d}.${m}.${y}`;
+}
 
 export function registerBookingHandlers(bot: Bot) {
-  // Start booking — redirect to Mini App
+  const siteUrl = () => process.env.SITE_URL || 'https://kohnachigatoy.uz';
+
+  // ─── Start booking — choose bot or Mini App ───
   bot.callbackQuery('booking_start', async (ctx) => {
     await ctx.answerCallbackQuery();
-    const siteUrl = process.env.SITE_URL || 'https://kohnachigatoy.uz';
 
     const keyboard = new InlineKeyboard()
-      .webApp('📅 Mini App orqali band qilish', `${siteUrl}/menu?action=book`)
+      .text('🤖 Bot orqali band qilish', 'booking_check_reg')
+      .row()
+      .webApp('📱 Mini App orqali', `${siteUrl()}/menu?action=book`)
       .row()
       .text('🏠 Bosh menyu', 'go_home');
 
     await ctx.editMessageText(
-      '📅 *Stol band qilish*\n\n' +
-      'Mini App orqali qulay band qiling — sana, vaqt va mehmonlar sonini tanlang!',
+      '📅 *Stol band qilish*\n\nQanday band qilmoqchisiz?',
       { parse_mode: 'Markdown', reply_markup: keyboard },
     );
   });
 
-  // Handle text for booking flow
-  bot.on('message:text', async (ctx, next) => {
-    const chatId = ctx.chat.id;
-    const session = sessions.get(chatId);
-    if (!session) return next();
+  // ─── Check registration before booking ───
+  bot.callbackQuery('booking_check_reg', async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const user = await getRegisteredUser(ctx.from!.id);
 
-    const text = ctx.message.text.trim();
-
-    // Cancel
-    if (text === '/cancel') {
-      sessions.delete(chatId);
-      const kb = new InlineKeyboard().text('🏠 Bosh menyu', 'go_home_new');
-      await ctx.reply('❌ Band qilish bekor qilindi.', { reply_markup: kb });
+    if (!user) {
+      await startRegistration(ctx, 'booking');
       return;
     }
 
-    const cancelKb = new InlineKeyboard().text('❌ Bekor qilish', 'booking_cancel');
-
-    if (session.step === 'date') {
-      const parts = text.split(/[./\-]/);
-      if (parts.length === 3) {
-        const [d, m, y] = parts;
-        session.date = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-      } else {
-        session.date = text;
-      }
-      session.step = 'time';
-      await ctx.reply('📅 *Band qilish* (2/5)\n\n🕐 Vaqtni kiriting (masalan: 19:00):', {
-        parse_mode: 'Markdown',
-        reply_markup: cancelKb,
-      });
-      return;
-    }
-
-    if (session.step === 'time') {
-      session.time = text;
-      session.step = 'size';
-      await ctx.reply('📅 *Band qilish* (3/5)\n\n👥 Nechta kishi uchun?', {
-        parse_mode: 'Markdown',
-        reply_markup: cancelKb,
-      });
-      return;
-    }
-
-    if (session.step === 'size') {
-      const size = parseInt(text);
-      if (!size || size <= 0) {
-        await ctx.reply('❌ Raqam kiriting (masalan: 4):');
-        return;
-      }
-      session.partySize = size;
-      session.step = 'name';
-      await ctx.reply('📅 *Band qilish* (4/5)\n\n👤 Ismingizni yozing:', {
-        parse_mode: 'Markdown',
-        reply_markup: cancelKb,
-      });
-      return;
-    }
-
-    if (session.step === 'name') {
-      session.customerName = text;
-      session.step = 'phone';
-      await ctx.reply('📅 *Band qilish* (5/5)\n\n📞 Telefon raqamingizni yozing:', {
-        parse_mode: 'Markdown',
-        reply_markup: cancelKb,
-      });
-      return;
-    }
-
-    if (session.step === 'phone') {
-      session.customerPhone = text;
-      session.step = 'confirm';
-
-      const keyboard = new InlineKeyboard()
-        .text('✅ Tasdiqlash', 'booking_confirm')
-        .text('❌ Bekor qilish', 'booking_cancel');
-
-      await ctx.reply(
-        `📅 *Band qilish ma'lumotlari:*\n\n` +
-        `📅 Sana: ${session.date}\n` +
-        `🕐 Vaqt: ${session.time}\n` +
-        `👥 Kishilar: ${session.partySize}\n` +
-        `👤 Ism: ${session.customerName}\n` +
-        `📞 Tel: ${session.customerPhone}\n\n` +
-        `Tasdiqlaysizmi?`,
-        { parse_mode: 'Markdown', reply_markup: keyboard },
-      );
-      return;
-    }
-
-    return next();
+    await startBookingFlow(ctx);
   });
 
-  // Confirm booking
+  // ─── Start booking flow (after registration) ───
+  async function startBookingFlow(ctx: any) {
+    const chatId = ctx.chat!.id;
+    bookingSessions.set(chatId, { step: 'date' });
+
+    const cancelKb = new InlineKeyboard()
+      .text('❌ Bekor qilish', 'booking_cancel')
+      .row()
+      .text('🏠 Bosh menyu', 'go_home');
+
+    try {
+      await ctx.editMessageText(
+        '📅 *Band qilish* (1/3)\n\n' +
+        '📆 Sanani yozing (masalan: 25.03 yoki 25.03.2026):',
+        { parse_mode: 'Markdown', reply_markup: cancelKb },
+      );
+    } catch {
+      await ctx.reply(
+        '📅 *Band qilish* (1/3)\n\n' +
+        '📆 Sanani yozing (masalan: 25.03 yoki 25.03.2026):',
+        { parse_mode: 'Markdown', reply_markup: cancelKb },
+      );
+    }
+  }
+
+  // ─── Handle date text input ───
+  // (wired from bot.ts text handler)
+
+  // ─── Time selection buttons ───
+  function timeKeyboard(): InlineKeyboard {
+    const kb = new InlineKeyboard();
+    const times = [
+      '12:00', '13:00', '14:00',
+      '15:00', '16:00', '17:00',
+      '18:00', '19:00', '20:00',
+      '21:00', '22:00',
+    ];
+    times.forEach((t, i) => {
+      kb.text(t, `btime_${t}`);
+      if ((i + 1) % 3 === 0) kb.row();
+    });
+    if (times.length % 3 !== 0) kb.row();
+    kb.text('❌ Bekor qilish', 'booking_cancel');
+    return kb;
+  }
+
+  // ─── Party size buttons ───
+  function partySizeKeyboard(): InlineKeyboard {
+    return new InlineKeyboard()
+      .text('1-2 kishi', 'bsize_1-2')
+      .text('3-4 kishi', 'bsize_3-4')
+      .row()
+      .text('5-6 kishi', 'bsize_5-6')
+      .text('7+ kishi', 'bsize_7+')
+      .row()
+      .text('❌ Bekor qilish', 'booking_cancel');
+  }
+
+  // ─── Time selected ───
+  bot.callbackQuery(/^btime_(.+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const chatId = ctx.chat!.id;
+    const session = bookingSessions.get(chatId);
+    if (!session || session.step !== 'time') return;
+
+    session.time = ctx.match![1];
+    session.step = 'size';
+
+    await ctx.editMessageText(
+      '📅 *Band qilish* (3/3)\n\n👥 Nechta kishi uchun?',
+      { parse_mode: 'Markdown', reply_markup: partySizeKeyboard() },
+    );
+  });
+
+  // ─── Party size selected ───
+  bot.callbackQuery(/^bsize_(.+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const chatId = ctx.chat!.id;
+    const session = bookingSessions.get(chatId);
+    if (!session || session.step !== 'size') return;
+
+    session.partySize = ctx.match![1];
+    session.step = 'confirm';
+
+    const user = await getRegisteredUser(ctx.from!.id);
+    if (!user) return;
+
+    const keyboard = new InlineKeyboard()
+      .text('✅ Tasdiqlash', 'booking_confirm')
+      .text('❌ Bekor qilish', 'booking_cancel');
+
+    await ctx.editMessageText(
+      `📅 *Band qilish ma'lumotlari:*\n\n` +
+      `👤 ${user.name}\n📞 ${user.phone}\n\n` +
+      `📆 Sana: ${formatDate(session.date!)}\n` +
+      `🕐 Vaqt: ${session.time}\n` +
+      `👥 Kishilar: ${session.partySize}\n\n` +
+      `Tasdiqlaysizmi?`,
+      { parse_mode: 'Markdown', reply_markup: keyboard },
+    );
+  });
+
+  // ─── Confirm booking ───
   bot.callbackQuery('booking_confirm', async (ctx) => {
     await ctx.answerCallbackQuery();
     const chatId = ctx.chat!.id;
-    const session = sessions.get(chatId);
+    const session = bookingSessions.get(chatId);
     if (!session) return;
+
+    const user = await getRegisteredUser(ctx.from!.id);
+    if (!user) return;
 
     const { data: booking, error } = await supabase
       .from('bookings')
       .insert({
-        customer_name: session.customerName!,
-        customer_phone: session.customerPhone!,
+        customer_name: user.name,
+        customer_phone: user.phone,
         telegram_chat_id: chatId,
         date: session.date!,
         time: session.time!,
@@ -147,10 +186,10 @@ export function registerBookingHandlers(bot: Bot) {
     if (error) {
       console.error('Booking insert error:', error);
       const kb = new InlineKeyboard().text('🏠 Bosh menyu', 'go_home');
-      return ctx.reply('❌ Xatolik yuz berdi. Qayta urinib ko\'ring.', { reply_markup: kb });
+      return ctx.reply('❌ Xatolik yuz berdi.', { reply_markup: kb });
     }
 
-    // Notify admin
+    // Notify admin group
     const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
     if (adminChatId) {
       const adminKeyboard = new InlineKeyboard()
@@ -160,14 +199,14 @@ export function registerBookingHandlers(bot: Bot) {
       await ctx.api.sendMessage(
         adminChatId,
         `📅 *Yangi band*\n\n` +
-        `👤 ${session.customerName} | 📞 ${session.customerPhone}\n` +
-        `📅 ${session.date} | 🕐 ${session.time}\n` +
+        `👤 ${user.name} | 📞 ${user.phone}\n` +
+        `📆 ${formatDate(session.date!)} | 🕐 ${session.time}\n` +
         `👥 ${session.partySize} kishi`,
         { parse_mode: 'Markdown', reply_markup: adminKeyboard },
       );
     }
 
-    sessions.delete(chatId);
+    bookingSessions.delete(chatId);
 
     const kb = new InlineKeyboard().text('🏠 Bosh menyu', 'go_home_new');
     await ctx.editMessageText(
@@ -177,30 +216,92 @@ export function registerBookingHandlers(bot: Bot) {
     );
   });
 
-  // Cancel booking
+  // ─── Cancel booking ───
   bot.callbackQuery('booking_cancel', async (ctx) => {
     await ctx.answerCallbackQuery();
-    sessions.delete(ctx.chat!.id);
+    bookingSessions.delete(ctx.chat!.id);
     const kb = new InlineKeyboard().text('🏠 Bosh menyu', 'go_home');
     await ctx.editMessageText('❌ Band qilish bekor qilindi.', { reply_markup: kb });
   });
 
-  // Admin confirm/cancel booking
+  // ─── Admin confirm booking → notify customer ───
   bot.callbackQuery(/^bconfirm_(.+)$/, async (ctx) => {
     await ctx.answerCallbackQuery('Tasdiqlandi!');
     const bookingId = ctx.match![1];
+
+    const { data: booking } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .single();
+
+    if (!booking) return;
+
     await supabase.from('bookings').update({ status: 'confirmed' }).eq('id', bookingId);
+
     await ctx.editMessageText(ctx.callbackQuery.message?.text + '\n\n✅ TASDIQLANDI', {
       parse_mode: 'Markdown',
     });
+
+    // Notify customer
+    if (booking.telegram_chat_id) {
+      await ctx.api.sendMessage(
+        booking.telegram_chat_id,
+        `✅ *Band qilish tasdiqlandi!*\n\n` +
+        `📆 ${formatDate(booking.date)} | 🕐 ${booking.time}\n` +
+        `👥 ${booking.party_size} kishi\n\n` +
+        `Sizni kutamiz! 🍽`,
+        { parse_mode: 'Markdown' },
+      ).catch(() => {});
+    }
   });
 
+  // ─── Admin cancel booking → notify customer ───
   bot.callbackQuery(/^bcancel_(.+)$/, async (ctx) => {
     await ctx.answerCallbackQuery('Bekor qilindi!');
     const bookingId = ctx.match![1];
+
+    const { data: booking } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .single();
+
+    if (!booking) return;
+
     await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
+
     await ctx.editMessageText(ctx.callbackQuery.message?.text + '\n\n❌ BEKOR QILINDI', {
       parse_mode: 'Markdown',
     });
+
+    // Notify customer
+    if (booking.telegram_chat_id) {
+      await ctx.api.sendMessage(
+        booking.telegram_chat_id,
+        `❌ *Band qilish bekor qilindi.*\n\n` +
+        `Savollar bo'lsa, biz bilan bog'laning:\n📞 +998 99 222 09 09`,
+        { parse_mode: 'Markdown' },
+      ).catch(() => {});
+    }
   });
+
+}
+
+/** Start booking flow for a registered user — called after registration completes */
+export async function startBookingForUser(ctx: any) {
+  const chatId = ctx.chat!.id;
+  bookingSessions.set(chatId, { step: 'date' });
+
+  const { InlineKeyboard } = await import('grammy');
+  const cancelKb = new InlineKeyboard()
+    .text('❌ Bekor qilish', 'booking_cancel')
+    .row()
+    .text('🏠 Bosh menyu', 'go_home_new');
+
+  await ctx.reply(
+    '📅 *Band qilish* (1/3)\n\n' +
+    '📆 Sanani yozing (masalan: 25.03 yoki 25.03.2026):',
+    { parse_mode: 'Markdown', reply_markup: cancelKb },
+  );
 }
