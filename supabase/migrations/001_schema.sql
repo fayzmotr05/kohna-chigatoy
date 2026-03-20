@@ -1,13 +1,13 @@
 -- Ko'hna Chig'atoy — Full Database Schema
 -- Run this in Supabase SQL Editor or via `supabase db push`
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- gen_random_uuid() is built into PostgreSQL 13+, no extension needed
 
 -- ============================================================
 -- Categories
 -- ============================================================
 CREATE TABLE categories (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   display_order INT DEFAULT 0,
   icon TEXT,
@@ -18,7 +18,7 @@ CREATE TABLE categories (
 -- Menu items
 -- ============================================================
 CREATE TABLE menu_items (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
   name TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
@@ -38,7 +38,7 @@ CREATE TABLE menu_items (
 -- Orders
 -- ============================================================
 CREATE TABLE orders (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_name TEXT NOT NULL,
   customer_phone TEXT NOT NULL,
   telegram_chat_id BIGINT,
@@ -54,7 +54,7 @@ CREATE TABLE orders (
 -- Bookings
 -- ============================================================
 CREATE TABLE bookings (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_name TEXT NOT NULL,
   customer_phone TEXT NOT NULL,
   telegram_chat_id BIGINT,
@@ -104,15 +104,12 @@ ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anyone reads categories" ON categories FOR SELECT USING (true);
 CREATE POLICY "anyone reads available items" ON menu_items FOR SELECT USING (is_available = true);
 
--- Admin does everything (authenticated via Supabase Auth)
-CREATE POLICY "admin all categories" ON categories FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "admin all menu_items" ON menu_items FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "admin all orders" ON orders FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "admin all bookings" ON bookings FOR ALL USING (auth.role() = 'authenticated');
-
--- Bot inserts orders/bookings (via service_role, bypasses RLS anyway)
+-- All writes go through service_role (bot + API routes), which bypasses RLS.
+-- These open policies are fallbacks for any anon-key writes (e.g., order/booking inserts).
 CREATE POLICY "insert orders" ON orders FOR INSERT WITH CHECK (true);
 CREATE POLICY "insert bookings" ON bookings FOR INSERT WITH CHECK (true);
+CREATE POLICY "read orders" ON orders FOR SELECT USING (true);
+CREATE POLICY "read bookings" ON bookings FOR SELECT USING (true);
 
 -- ============================================================
 -- Storage — single media bucket
@@ -121,7 +118,7 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('media', 'media', true);
 
 CREATE POLICY "public reads media" ON storage.objects
   FOR SELECT USING (bucket_id = 'media');
-CREATE POLICY "admin uploads media" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'media' AND auth.role() = 'authenticated');
-CREATE POLICY "admin deletes media" ON storage.objects
-  FOR DELETE USING (bucket_id = 'media' AND auth.role() = 'authenticated');
+CREATE POLICY "anyone uploads media" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'media');
+CREATE POLICY "anyone deletes media" ON storage.objects
+  FOR DELETE USING (bucket_id = 'media');

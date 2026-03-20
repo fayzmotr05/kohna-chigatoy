@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { createServerClient } from '@/lib/supabase';
 import type { Category, MenuItem } from '@/lib/types';
+import { mockCategories, mockItems } from '@/lib/mock-data';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import MenuPageClient from './MenuPageClient';
@@ -17,12 +18,14 @@ async function getMenuData() {
         .eq('is_available', true)
         .order('name'),
     ]);
+    if (categoriesRes.error || !categoriesRes.data?.length) throw categoriesRes.error;
     return {
-      categories: (categoriesRes.data as Category[]) || [],
+      categories: categoriesRes.data as Category[],
       items: (itemsRes.data as MenuItem[]) || [],
     };
   } catch {
-    return { categories: [], items: [] };
+    // Fallback to mock data for local dev
+    return { categories: mockCategories, items: mockItems };
   }
 }
 

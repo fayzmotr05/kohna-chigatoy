@@ -49,6 +49,69 @@ body {
   display: none;
 }
 
+/* ── Scroll reveal animation ── */
+.fade-section {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.fade-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Warm gradient divider ── */
+.divider-warm {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-brown-light), transparent);
+}
+
+/* ── Geometric pattern background ── */
+.pattern-geo {
+  background-image: repeating-conic-gradient(var(--color-brown-light) 0% 25%, transparent 0% 50%);
+  background-size: 40px 40px;
+}
+
+/* ── Category placeholder gradients ── */
+.placeholder-palov {
+  background: linear-gradient(135deg, #E8D5C0 0%, #D4B896 50%, #C49A7E 100%);
+}
+.placeholder-soup {
+  background: linear-gradient(135deg, #F2E8DA 0%, #E8D5C0 50%, #D4B896 100%);
+}
+.placeholder-kabob {
+  background: linear-gradient(135deg, #C49A7E 0%, #A46B4F 50%, #8B4A2B 100%);
+}
+.placeholder-somsa {
+  background: linear-gradient(135deg, #E8D5C0 0%, #D4B896 50%, #C49A7E 100%);
+}
+.placeholder-salad {
+  background: linear-gradient(135deg, #F2E8DA 0%, #E8D5C0 60%, #C49A7E 100%);
+}
+.placeholder-drink {
+  background: linear-gradient(135deg, #FAF6F0 0%, #E8D5C0 50%, #D4B896 100%);
+}
+
+/* ── Scroll-down bounce ── */
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
+
+/* ── Skeleton shimmer ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--color-sand-light) 25%, var(--color-sand) 50%, var(--color-sand-light) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -57,5 +120,9 @@ body {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+  .fade-section {
+    opacity: 1;
+    transform: none;
   }
 }

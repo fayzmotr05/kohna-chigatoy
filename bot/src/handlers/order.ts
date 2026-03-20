@@ -43,30 +43,19 @@ function cartText(cart: CartSession): string {
 }
 
 export function registerOrderHandlers(bot: Bot) {
-  // Start order — show categories
+  // Start order — redirect to Mini App
   bot.callbackQuery('order_start', async (ctx) => {
     await ctx.answerCallbackQuery();
-    const chatId = ctx.chat!.id;
-    carts.set(chatId, { items: [], step: 'browsing' });
+    const siteUrl = process.env.SITE_URL || 'https://kohnachigatoy.uz';
 
-    const { data: categories } = await supabase
-      .from('categories')
-      .select('*')
-      .order('display_order');
+    const keyboard = new InlineKeyboard()
+      .webApp('🛒 Mini App orqali buyurtma', `${siteUrl}/menu`);
 
-    if (!categories?.length) return ctx.reply('Menyu hozircha bo\'sh.');
-
-    const keyboard = new InlineKeyboard();
-    categories.forEach((cat, i) => {
-      keyboard.text(`${cat.icon || ''} ${cat.name}`, `ocat_${cat.id}`);
-      if (i % 2 === 1) keyboard.row();
-    });
-    keyboard.row().text('🛒 Savatni ko\'rish', 'cart_view');
-
-    await ctx.editMessageText('🛒 *Buyurtma berish*\n\nKategoriyani tanlang:', {
-      parse_mode: 'Markdown',
-      reply_markup: keyboard,
-    });
+    await ctx.editMessageText(
+      '🛒 *Buyurtma berish*\n\n' +
+      'Mini App orqali qulay buyurtma bering — rasmlar, narxlar va savat bilan!',
+      { parse_mode: 'Markdown', reply_markup: keyboard },
+    );
   });
 
   // Order category — show items

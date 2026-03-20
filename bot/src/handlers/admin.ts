@@ -76,7 +76,8 @@ export function registerAdminHandlers(bot: Bot) {
     const keyboard = new InlineKeyboard()
       .text('Nom', `aefield_name`).text('Tavsif', `aefield_description`).row()
       .text('Narx', `aefield_price`).text('Kategoriya', `aefield_category`).row()
-      .text('Tavsiya', `aefield_featured`).text('Rasm', `aefield_image`);
+      .text('Tavsiya', `aefield_featured`).text('Rasm', `aefield_image`).row()
+      .text('3D model', `aefield_model`);
 
     await ctx.editMessageText('Nimani o\'zgartirmoqchisiz?', { reply_markup: keyboard });
   });
@@ -102,6 +103,12 @@ export function registerAdminHandlers(bot: Bot) {
     if (field === 'image') {
       session.step = 'edit_image';
       await ctx.reply('📷 Yangi rasmni yuboring:');
+      return;
+    }
+
+    if (field === 'model') {
+      session.step = 'edit_model';
+      await ctx.reply('🔮 3D faylni yuboring (.glb yoki .usdz):');
       return;
     }
 
@@ -406,7 +413,13 @@ export function registerAdminHandlers(bot: Bot) {
         return;
       }
       if (session.step === 'photo') {
-        // Skip photo if text
+        if (text === '/skip') {
+          session.step = 'model';
+          await ctx.reply('🔮 3D faylni yuboring (.glb yoki .usdz) yoki /skip:');
+        }
+        return;
+      }
+      if (session.step === 'model') {
         if (text === '/skip') {
           session.step = 'featured';
           const kb = new InlineKeyboard()
@@ -473,19 +486,21 @@ export function registerAdminHandlers(bot: Bot) {
     return next();
   });
 
-  // Handle photo for add item
+  // Handle photo for add item and edit image
   bot.on('message:photo', async (ctx, next) => {
     if (!isAdmin(ctx)) return next();
     const session = sessions.get(ctx.chat.id);
-    if (!session || session.action !== 'add' || session.step !== 'photo') return next();
+    if (!session) return next();
+
+    const isAddPhoto = session.action === 'add' && session.step === 'photo';
+    const isEditImage = session.action === 'edit' && session.step === 'edit_image';
+    if (!isAddPhoto && !isEditImage) return next();
 
     const photo = ctx.message.photo;
     const fileId = photo[photo.length - 1].file_id;
 
-    // Download and upload to Supabase
     const file = await ctx.api.getFile(fileId);
     const url = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
-
     const response = await fetch(url);
     const buffer = Buffer.from(await response.arrayBuffer());
     const fileName = `images/${Date.now()}.jpg`;
@@ -498,14 +513,104 @@ export function registerAdminHandlers(bot: Bot) {
       .from('media')
       .getPublicUrl(fileName);
 
-    session.data.imageUrl = publicUrl;
-    session.step = 'featured';
+    if (isEditImage) {
+      await supabase.from('menu_items').update({ image_url: publicUrl }).eq('id', session.data.itemId);
+      sessions.delete(ctx.chat.id);
+      await ctx.reply('✅ Rasm yangilandi!');
+      return;
+    }
 
+    // Add flow — save URL and move to 3D model step
+    session.data.imageUrl = publicUrl;
+    session.step = 'model';
+    await ctx.reply('🔮 3D faylni yuboring (.glb yoki .usdz) yoki /skip:');
+  });
+
+  // Handle document (3D files) for add/edit flows
+  bot.on('message:document', async (ctx, next) => {
+    if (!isAdmin(ctx)) return next();
+    const session = sessions.get(ctx.chat.id);
+    if (!session) return next();
+
+    const doc = ctx.message.document;
+    const fileName = doc.file_name || '';
+    const ext = fileName.split('.').pop()?.toLowerCase();
+
+    // Handle 3D model upload (add flow or edit flow)
+    if (
+      (session.action === 'add' && session.step === 'model') ||
+      (session.action === 'edit' && session.step === 'edit_model')
+    ) {
+      if (ext !== 'glb' && ext !== 'usdz') {
+        await ctx.reply('❌ Faqat .glb yoki .usdz fayllar qabul qilinadi. Qayta yuboring:');
+        return;
+      }
+
+      await ctx.reply('⏳ Fayl yuklanmoqda...');
+
+      const file = await ctx.api.getFile(doc.file_id);
+      const url = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
+      const response = await fetch(url);
+      const buffer = Buffer.from(await response.arrayBuffer());
+
+      const storagePath = `models/${ext}/${Date.now()}.${ext}`;
+      const contentType = ext === 'glb' ? 'model/gltf-binary' : 'model/vnd.usdz+zip';
+
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(storagePath, buffer, { contentType });
+
+      if (uploadError) {
+        console.error('3D upload error:', uploadError);
+        await ctx.reply('❌ Fayl yuklashda xatolik. Qayta urinib ko\'ring.');
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(storagePath);
+
+      if (session.action === 'edit') {
+        // Update existing item
+        const update: Record<string, any> = { model_status: 'ready' };
+        if (ext === 'glb') update.model_glb_url = publicUrl;
+        if (ext === 'usdz') update.model_usdz_url = publicUrl;
+        await supabase.from('menu_items').update(update).eq('id', session.data.itemId);
+        sessions.delete(ctx.chat.id);
+        await ctx.reply(`✅ 3D model (.${ext}) yangilandi!`);
+        return;
+      }
+
+      // Add flow — save URL and move to featured step
+      if (ext === 'glb') session.data.modelGlbUrl = publicUrl;
+      if (ext === 'usdz') session.data.modelUsdzUrl = publicUrl;
+
+      // Ask if they want to send another format
+      const kb = new InlineKeyboard()
+        .text(`Tayyor, davom etish →`, 'aamodel_done');
+      await ctx.reply(
+        `✅ .${ext} yuklandi!\n\nBoshqa formatni ham yuborishingiz mumkin (.${ext === 'glb' ? 'usdz' : 'glb'}) yoki davom eting:`,
+        { reply_markup: kb },
+      );
+      return;
+    }
+
+    return next();
+  });
+
+  // Model done → go to featured
+  bot.callbackQuery('aamodel_done', async (ctx) => {
+    if (!isAdmin(ctx)) return ctx.answerCallbackQuery();
+    await ctx.answerCallbackQuery();
+    const session = sessions.get(ctx.chat!.id);
+    if (!session) return;
+    session.step = 'featured';
     const kb = new InlineKeyboard()
       .text('Ha ⭐', 'aafeat_true')
       .text('Yo\'q', 'aafeat_false');
     await ctx.reply('Tavsiya etiladimi?', { reply_markup: kb });
   });
+
 
   // Add item — pick category callback
   bot.callbackQuery(/^aacat_(.+)$/, async (ctx) => {
@@ -528,12 +633,16 @@ export function registerAdminHandlers(bot: Bot) {
     const isFeatured = ctx.match![1] === 'true';
 
     // Insert into DB
+    const hasModel = session.data.modelGlbUrl || session.data.modelUsdzUrl;
     const { error } = await supabase.from('menu_items').insert({
       name: session.data.name,
       description: session.data.description || '',
       price: session.data.price,
       category_id: session.data.categoryId,
       image_url: session.data.imageUrl || null,
+      model_glb_url: session.data.modelGlbUrl || null,
+      model_usdz_url: session.data.modelUsdzUrl || null,
+      model_status: hasModel ? 'ready' : 'none',
       is_featured: isFeatured,
     });
 

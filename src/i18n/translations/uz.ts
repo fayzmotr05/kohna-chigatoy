@@ -1,0 +1,122 @@
+export const uz = {
+  nav: {
+    home: 'Bosh sahifa',
+    menu: 'Menyu',
+    about: 'Biz haqimizda',
+    location: 'Manzil',
+    booking: 'Band qilish',
+  },
+  hero: {
+    subtitle: 'Oilaviy Restoran',
+    description: "Milliy va uyg'ur taomlar. Qadimiy muhit, haqiqiy ta'm.",
+    viewMenu: "Menyuni ko'rish",
+    telegram: 'Telegram bot',
+  },
+  about: {
+    title: 'Biz haqimizda',
+    paragraph1:
+      "Ko'hna Chig'atoy — Toshkentdagi oilaviy restoran. Milliy va uyg'ur taomlar, avloddan avlodga o'tib kelgan retseptlar asosida tayyorlanadi. 450 o'rindiqli zal, bolalar maydonchasibor.",
+    paragraph2:
+      "Har bir taom — bu o'zbek oshxonasining boy merosiga hurmat va sevgi bilan tayyorlangan san'at asari.",
+    card1Title: "An'anaviy Retseptlar",
+    card1Desc: "Avloddan avlodga o'tib kelgan",
+    card2Title: 'Toza Mahsulotlar',
+    card2Desc: 'Har kuni yangi mahsulotlar',
+    card3Title: 'Oilaviy Muhit',
+    card3Desc: 'Butun oila uchun qulay',
+  },
+  featured: {
+    title: 'Tavsiya etamiz',
+    subtitle: 'Eng mashhur va sevimli taomlarimiz',
+    fullMenu: "To'liq menyu",
+    popular: 'Mashhur',
+  },
+  location: {
+    title: 'Bizning manzil',
+    addressLabel: 'Manzil',
+    address: "Matlubot 17, Chig'atoy, Toshkent",
+    hoursLabel: 'Ish vaqti',
+    hours: 'Har kuni: 10:00 — 23:00',
+    phoneLabel: 'Telefon',
+    phone: '+998 99 222 09 09',
+    contactTelegram: 'Telegram orqali aloqa',
+    openMap: 'Xaritada ochish',
+  },
+  menu: {
+    title: 'Menyu',
+    searchPlaceholder: 'Taom qidirish...',
+    arWhat: 'AR nima?',
+    arView: "AR ko'rish",
+    noResults: 'Hech narsa topilmadi',
+    clearSearch: 'Qidiruvni tozalash',
+    popular: 'Mashhur',
+    ar: 'AR',
+  },
+  footer: {
+    description: "Milliy va uyg'ur taomlar. Qadimiy muhit, haqiqiy ta'm.",
+    pages: 'Sahifalar',
+    home: 'Bosh sahifa',
+    menu: 'Menyu',
+    contact: 'Aloqa',
+    city: 'Toshkent shahri',
+    phone: '+998 99 222 09 09',
+    hours: 'Ish vaqti: 10:00 — 23:00',
+    telegramBot: 'Telegram',
+    instagram: 'Instagram',
+    copyright: "Ko'hna Chig'atoy. Barcha huquqlar himoyalangan.",
+  },
+  telegram: {
+    addToCart: "Qo'shish",
+    cart: 'Savat',
+    cartEmpty: "Savat bo'sh",
+    checkout: 'Buyurtma berish',
+    confirmOrder: 'Tasdiqlash',
+    orderSuccess: 'Buyurtma qabul qilindi!',
+    orderSuccessDesc: 'Tez orada siz bilan bog\'lanamiz.',
+    orderError: 'Xatolik yuz berdi. Qayta urinib ko\'ring.',
+    total: 'Jami',
+    remove: "O'chirish",
+    regTitle: 'Ro\'yxatdan o\'tish',
+    regDesc: 'Buyurtma berish uchun telefon raqamingizni tasdiqlang.',
+    shareContact: 'Kontaktni ulashish',
+    regDenied: 'Kontakt ulashilmadi. Qayta urinib ko\'ring.',
+    regName: 'Ismingiz',
+    regNamePlaceholder: 'Ismingizni kiriting',
+    regConfirm: 'Tasdiqlash',
+    regCancel: 'Bekor qilish',
+    bookTable: 'Stol band qilish',
+    bookDate: 'Sana',
+    bookTime: 'Vaqt',
+    bookPartySize: 'Mehmonlar soni',
+    bookNotes: 'Izoh (ixtiyoriy)',
+    bookConfirm: 'Band qilish',
+    bookSuccess: "Buyurtma qabul qilindi!",
+    bookSuccessDesc: 'Biz siz bilan bog\'lanamiz.',
+    bookError: 'Xatolik yuz berdi.',
+    persons: 'kishi',
+  },
+  ar: {
+    step1Title: 'AR rejim nima?',
+    step1Desc:
+      "Taomni 3D ko'rinishda telefoningiz kamerasi orqali o'z stolingizda ko'ring — xuddi haqiqiyday!",
+    step2Title: 'Qanday ishlaydi?',
+    step2Desc:
+      "\"AR ko'rish\" tugmasini bosing. Kamera ochiladi — telefonni stolga qarating va taom paydo bo'ladi.",
+    step3Title: 'Aylantiring va kattalashtiring',
+    step3Desc:
+      "Barmog'ingiz bilan taomni aylantiring, kattalashtiring yoki kichiklashtiring.",
+    skip: "O'tkazish",
+    next: 'Keyingi',
+    start: 'Boshlash',
+    loading: 'Yuklanmoqda...',
+    arLoading: 'AR yuklanmoqda...',
+    close: 'Yopish',
+  },
+} as const;
+
+// Deep-convert literal string types to plain string for other locales
+type DeepStringify<T> = {
+  [K in keyof T]: T[K] extends string ? string : DeepStringify<T[K]>;
+};
+
+export type TranslationKeys = DeepStringify<typeof uz>;

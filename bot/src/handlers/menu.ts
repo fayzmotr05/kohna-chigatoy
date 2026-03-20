@@ -2,14 +2,17 @@ import { Bot, InlineKeyboard } from 'grammy';
 import { supabase } from '../supabase';
 
 export function registerMenuHandlers(bot: Bot) {
-  // /start — show main menu
+  // /start — show main menu with Mini App buttons
   bot.command('start', async (ctx) => {
+    const siteUrl = process.env.SITE_URL || 'https://kohnachigatoy.uz';
     const keyboard = new InlineKeyboard()
-      .text('📋 Menu', 'menu_main')
+      .webApp('📋 Menyu', `${siteUrl}/menu`)
       .text('🛒 Buyurtma', 'order_start')
       .row()
-      .text('📅 Band qilish', 'booking_start')
-      .text('ℹ️ Ma\'lumot', 'info');
+      .webApp('📅 Band qilish', `${siteUrl}/menu?action=book`)
+      .text('ℹ️ Ma\'lumot', 'info')
+      .row()
+      .text('📋 Menyu (text)', 'menu_main');
 
     await ctx.reply(
       '🏠 *Ko\'hna Chig\'atoy*\nOilaviy Restoranga xush kelibsiz!\n\nQuyidagidan tanlang:',
@@ -23,9 +26,10 @@ export function registerMenuHandlers(bot: Bot) {
     await ctx.reply(
       '📍 *Ko\'hna Chig\'atoy*\n\n' +
       '🕐 Ish vaqti: 10:00 — 23:00\n' +
-      '📞 Telefon: +998 XX XXX XX XX\n' +
-      '📍 Manzil: Toshkent shahri\n\n' +
-      '🌐 Sayt: kohnachigatoy.uz',
+      '📞 Telefon: +998 99 222 09 09\n' +
+      '📍 Manzil: Matlubot 17, Chig\'atoy, Toshkent\n\n' +
+      '🌐 Sayt: kohnachigatoy.uz\n' +
+      '📸 Instagram: @kohnachigatoy',
       { parse_mode: 'Markdown' },
     );
   });

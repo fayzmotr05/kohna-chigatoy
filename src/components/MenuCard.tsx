@@ -1,21 +1,38 @@
 'use client';
 
 import Image from 'next/image';
+import { Star, Box, Plus } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
+import { useTranslation } from '@/i18n/LanguageContext';
+import { useTelegram } from '@/telegram/TelegramProvider';
+import { useCart } from '@/telegram/CartProvider';
+import PlaceholderImage from '@/components/PlaceholderImage';
 import type { MenuItem } from '@/lib/types';
 
 interface MenuCardProps {
   item: MenuItem;
   onAR?: (item: MenuItem) => void;
+  onAddToCart?: (item: MenuItem) => void;
 }
 
-export default function MenuCard({ item, onAR }: MenuCardProps) {
+export default function MenuCard({ item, onAR, onAddToCart }: MenuCardProps) {
+  const { t } = useTranslation();
+  const { isTelegram } = useTelegram();
+  const { addItem } = useCart();
   const hasAR = item.model_status === 'ready' && item.model_glb_url;
 
+  const handleAdd = () => {
+    if (onAddToCart) {
+      onAddToCart(item);
+    } else {
+      addItem({ id: item.id, name: item.name, price: item.price });
+    }
+  };
+
   return (
-    <div className="bg-white-warm border border-sand rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200 group">
+    <div className="bg-white-warm border border-sand/60 rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(61,33,23,0.08)] transition-all duration-200 group">
       {/* Image */}
-      <div className="relative h-44 bg-sand">
+      <div className="relative h-44">
         {item.image_url ? (
           <Image
             src={item.image_url}
@@ -25,29 +42,24 @@ export default function MenuCard({ item, onAR }: MenuCardProps) {
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-brown-light/50">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M12 3c-1.5 0-2.5.5-3.5 1.5S7 6.5 7 8c0 2 1 3 2 4l1 1H9c-2 0-4 1-5 3v1h16v-1c-1-2-3-3-5-3h-1l1-1c1-1 2-2 2-4 0-1.5-.5-2.5-1.5-3.5S13.5 3 12 3z" />
-            </svg>
-          </div>
+          <PlaceholderImage categoryName={item.categories?.name} />
         )}
 
+        {/* Bottom gradient for depth */}
+        <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/8 to-transparent" />
+
         {/* Badges */}
-        <div className="absolute top-2 left-2 flex gap-1.5">
+        <div className="absolute top-2.5 left-2.5 flex gap-1.5">
           {item.is_featured && (
-            <span className="bg-tan/90 text-brown-deep px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-              Mashhur
+            <span className="bg-white-warm/90 backdrop-blur-sm text-brown-deep px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1 shadow-sm">
+              <Star size={10} fill="currentColor" />
+              {t.menu.popular}
             </span>
           )}
           {hasAR && (
-            <span className="bg-brown-deep/90 text-tan px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
-              AR
+            <span className="bg-brown-deep/90 backdrop-blur-sm text-tan px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1 shadow-sm">
+              <Box size={10} />
+              {t.menu.ar}
             </span>
           )}
         </div>
@@ -56,12 +68,10 @@ export default function MenuCard({ item, onAR }: MenuCardProps) {
         {hasAR && onAR && (
           <button
             onClick={() => onAR(item)}
-            className="absolute bottom-2 right-2 bg-brown-deep text-tan px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 hover:bg-brown transition-colors opacity-0 group-hover:opacity-100 sm:opacity-100"
+            className="absolute bottom-2.5 right-2.5 bg-brown-deep text-tan px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 hover:bg-brown transition-all duration-200 opacity-0 group-hover:opacity-100 sm:opacity-100 shadow-sm"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-            AR ko&apos;rish
+            <Box size={13} />
+            {t.menu.arView}
           </button>
         )}
       </div>
@@ -71,12 +81,23 @@ export default function MenuCard({ item, onAR }: MenuCardProps) {
         <h3 className="font-display text-base font-semibold text-brown-deep mb-1 line-clamp-1">
           {item.name}
         </h3>
-        <p className="text-text-secondary text-sm line-clamp-2 mb-3 min-h-[2.5rem]">
+        <p className="text-text-secondary text-sm line-clamp-2 mb-3 min-h-[2.5rem] leading-relaxed">
           {item.description}
         </p>
-        <p className="font-display text-lg font-bold text-brown-deep">
-          {formatPrice(item.price)}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="font-display text-xl font-bold text-brown-deep">
+            {formatPrice(item.price)}
+          </p>
+          {isTelegram && (
+            <button
+              onClick={handleAdd}
+              className="w-8 h-8 rounded-full bg-brown-deep text-cream flex items-center justify-center hover:bg-brown transition-colors shadow-sm active:scale-95"
+              aria-label={t.telegram.addToCart}
+            >
+              <Plus size={16} strokeWidth={2.5} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

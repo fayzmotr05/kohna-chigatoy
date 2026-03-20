@@ -13,14 +13,18 @@ interface BookingSession {
 const sessions = new Map<number, BookingSession>();
 
 export function registerBookingHandlers(bot: Bot) {
-  // Start booking
+  // Start booking — redirect to Mini App
   bot.callbackQuery('booking_start', async (ctx) => {
     await ctx.answerCallbackQuery();
-    const chatId = ctx.chat!.id;
-    sessions.set(chatId, { step: 'date' });
-    await ctx.reply(
-      '📅 *Stol band qilish*\n\nSanani kiriting (masalan: 15.03.2026):',
-      { parse_mode: 'Markdown' },
+    const siteUrl = process.env.SITE_URL || 'https://kohnachigatoy.uz';
+
+    const keyboard = new InlineKeyboard()
+      .webApp('📅 Mini App orqali band qilish', `${siteUrl}/menu?action=book`);
+
+    await ctx.editMessageText(
+      '📅 *Stol band qilish*\n\n' +
+      'Mini App orqali qulay band qiling — sana, vaqt va mehmonlar sonini tanlang!',
+      { parse_mode: 'Markdown', reply_markup: keyboard },
     );
   });
 
