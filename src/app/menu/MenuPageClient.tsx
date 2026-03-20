@@ -350,7 +350,7 @@ export default function MenuPageClient({ categories, items }: Props) {
                                 {formatPrice(featured.price)}
                               </p>
                               <div className="flex items-center gap-2">
-                                {featured.model_status === 'ready' && featured.model_glb_url && (
+                                {featured.model_status === 'ready' && (featured.model_glb_url || featured.model_usdz_url) && (
                                   <button
                                     onClick={() => handleAR(featured)}
                                     className="bg-brown-deep text-tan px-4 py-2 rounded text-sm font-semibold flex items-center gap-2 hover:bg-brown hover:shadow-[0_4px_20px_rgba(109,53,32,0.3)] transition-all duration-200"
@@ -416,7 +416,7 @@ export default function MenuPageClient({ categories, items }: Props) {
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
-                          {item.model_status === 'ready' && item.model_glb_url && (
+                          {item.model_status === 'ready' && (item.model_glb_url || item.model_usdz_url) && (
                             <button
                               onClick={() => handleAR(item)}
                               className="text-brown-deep text-xs font-semibold flex items-center gap-1 hover:text-brown transition-colors"
@@ -457,7 +457,7 @@ export default function MenuPageClient({ categories, items }: Props) {
       )}
 
       {/* AR Viewer modal */}
-      {arItem && !showOnboarding && arItem.model_glb_url && (
+      {arItem && !showOnboarding && (arItem.model_glb_url || arItem.model_usdz_url) && (
         <ARViewer
           glbUrl={arItem.model_glb_url}
           usdzUrl={arItem.model_usdz_url}
