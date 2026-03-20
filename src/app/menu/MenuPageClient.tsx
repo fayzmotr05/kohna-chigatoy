@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import {
   Search, Grid3X3, List, Layers, Star, Box, SearchX, ShoppingBag, Plus,
-  Wheat, Soup, Cookie, Salad, UtensilsCrossed,
 } from 'lucide-react';
 import type { Category, MenuItem } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
@@ -19,18 +18,6 @@ import RegistrationGate from '@/telegram/RegistrationGate';
 import BookingForm from '@/telegram/BookingForm';
 
 // Category icon mapping — lucide-react, no emojis
-const categoryIconMap: Record<string, any> = {
-  '🍜': Soup,
-  '🍚': Wheat,
-  '🥗': Salad,
-  '🍰': Cookie,
-};
-
-function CategoryIcon({ icon }: { icon: string | null }) {
-  const IconComponent = (icon && categoryIconMap[icon]) || UtensilsCrossed;
-  return <IconComponent size={16} strokeWidth={1.5} className="text-current" />;
-}
-
 interface Props {
   categories: Category[];
   items: MenuItem[];
@@ -315,7 +302,6 @@ export default function MenuPageClient({ categories, items }: Props) {
                     : 'text-text-secondary hover:text-brown-deep hover:bg-sand-light/50'
                 }`}
               >
-                <CategoryIcon icon={cat.icon} />
                 {cat.name}
               </button>
             ))}
@@ -357,9 +343,6 @@ export default function MenuPageClient({ categories, items }: Props) {
               >
                 {/* Category header */}
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 rounded-full bg-sand-light border border-sand/50 flex items-center justify-center text-brown-medium">
-                    <CategoryIcon icon={category.icon} />
-                  </div>
                   <h2 className="font-display text-2xl font-bold text-brown-deep">
                     {category.name}
                   </h2>
@@ -436,7 +419,7 @@ export default function MenuPageClient({ categories, items }: Props) {
                     )}
 
                     {/* Regular grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {rest.map((item) => (
                         <MenuCard key={item.id} item={item} onAR={handleAR} onAddToCart={isTelegram ? handleAddToCart : undefined} />
                       ))}
