@@ -10,6 +10,7 @@ export async function POST(request: Request) {
 
   const result = validateInitData(initData);
   if (!result.valid) {
+    console.error('Registration validation failed:', result.error, 'initData length:', initData.length, 'token set:', !!process.env.TELEGRAM_BOT_TOKEN);
     return NextResponse.json({ error: result.error }, { status: 401 });
   }
 
