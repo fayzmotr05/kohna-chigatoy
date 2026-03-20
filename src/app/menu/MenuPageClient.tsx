@@ -11,7 +11,6 @@ import { formatPrice } from '@/lib/utils';
 import { useTranslation } from '@/i18n/LanguageContext';
 import MenuCard from '@/components/MenuCard';
 import PlaceholderImage from '@/components/PlaceholderImage';
-import ARViewer from '@/components/ARViewer';
 import AROnboarding from '@/components/AROnboarding';
 import { useTelegram } from '@/telegram/TelegramProvider';
 import { useCart } from '@/telegram/CartProvider';
@@ -150,14 +149,67 @@ export default function MenuPageClient({ categories, items }: Props) {
     if (!seen) {
       setArItem(item);
       setShowOnboarding(true);
-    } else {
-      setArItem(item);
+      return;
     }
+    // Launch native AR directly — skip in-app 3D preview
+    launchNativeAR(item);
   }, []);
+
+  function launchNativeAR(item: MenuItem) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroidDevice = /Android/i.test(navigator.userAgent);
+    const tg = (window as any).Telegram?.WebApp;
+
+    if (isIOS && item.model_usdz_url) {
+      const url = item.model_usdz_url + '#allowsContentScaling=0';
+      if (tg) {
+        tg.openLink(url, { try_instant_view: false });
+      } else {
+        // Native Safari: use <a rel="ar"> for Quick Look
+        const a = document.createElement('a');
+        a.rel = 'ar';
+        a.href = url;
+        const img = document.createElement('img');
+        a.appendChild(img);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } else if (isAndroidDevice && item.model_glb_url) {
+      const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(item.model_glb_url)}&mode=ar_only#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;end;`;
+      if (tg) {
+        tg.openLink(intentUrl, { try_instant_view: false });
+      } else {
+        window.location.href = intentUrl;
+      }
+    } else if (item.model_usdz_url) {
+      // Fallback: open USDZ directly
+      const url = item.model_usdz_url;
+      if (tg) {
+        tg.openLink(url, { try_instant_view: false });
+      } else {
+        window.open(url, '_blank');
+      }
+    } else if (item.model_glb_url) {
+      // Fallback: open GLB
+      const url = item.model_glb_url;
+      if (tg) {
+        tg.openLink(url, { try_instant_view: false });
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+  }
 
   const handleOnboardingComplete = () => {
     localStorage.setItem('ar_onboarding_seen', 'true');
     setShowOnboarding(false);
+    // After onboarding, launch AR directly
+    if (arItem) {
+      launchNativeAR(arItem);
+      setArItem(null);
+    }
   };
 
   const handleShowOnboardingManual = () => {
@@ -456,15 +508,7 @@ export default function MenuPageClient({ categories, items }: Props) {
         />
       )}
 
-      {/* AR Viewer modal */}
-      {arItem && !showOnboarding && (arItem.model_glb_url || arItem.model_usdz_url) && (
-        <ARViewer
-          glbUrl={arItem.model_glb_url}
-          usdzUrl={arItem.model_usdz_url}
-          itemName={arItem.name}
-          onClose={() => setArItem(null)}
-        />
-      )}
+      {/* AR now launches natively — no in-app viewer needed */}
 
       {/* Telegram-only: Floating cart button (fallback when MainButton not available) */}
       {isTelegram && itemCount > 0 && (
