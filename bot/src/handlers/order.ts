@@ -42,6 +42,24 @@ function cartText(cart: CartSession): string {
   return lines.join('\n');
 }
 
+function cartKeyboard(cart: CartSession): InlineKeyboard {
+  const keyboard = new InlineKeyboard();
+  cart.items.forEach((item) => {
+    keyboard
+      .text(`❌ ${item.name}`, `orem_${item.id}`)
+      .text(`➖`, `odec_${item.id}`)
+      .text(`${item.qty}`, `noop`)
+      .text(`➕`, `oinc_${item.id}`)
+      .row();
+  });
+  keyboard
+    .text('➕ Yana qo\'shish', 'order_start')
+    .text('✅ Buyurtma berish', 'checkout')
+    .row()
+    .text('🏠 Bosh menyu', 'go_home');
+  return keyboard;
+}
+
 export function registerOrderHandlers(bot: Bot) {
   // Start order — redirect to Mini App
   bot.callbackQuery('order_start', async (ctx) => {
@@ -49,7 +67,9 @@ export function registerOrderHandlers(bot: Bot) {
     const siteUrl = process.env.SITE_URL || 'https://kohnachigatoy.uz';
 
     const keyboard = new InlineKeyboard()
-      .webApp('🛒 Mini App orqali buyurtma', `${siteUrl}/menu`);
+      .webApp('🛒 Mini App orqali buyurtma', `${siteUrl}/menu`)
+      .row()
+      .text('🏠 Bosh menyu', 'go_home');
 
     await ctx.editMessageText(
       '🛒 *Buyurtma berish*\n\n' +
@@ -70,7 +90,12 @@ export function registerOrderHandlers(bot: Bot) {
       .eq('is_available', true)
       .order('name');
 
-    if (!items?.length) return ctx.reply('Bu kategoriyada taom yo\'q.');
+    if (!items?.length) {
+      const kb = new InlineKeyboard()
+        .text('⬅️ Orqaga', 'order_start')
+        .text('🏠 Bosh menyu', 'go_home');
+      return ctx.editMessageText('Bu kategoriyada taom yo\'q.', { reply_markup: kb });
+    }
 
     const keyboard = new InlineKeyboard();
     items.forEach((item) => {
@@ -85,7 +110,7 @@ export function registerOrderHandlers(bot: Bot) {
 
   // Add item to cart
   bot.callbackQuery(/^oadd_(.+)$/, async (ctx) => {
-    await ctx.answerCallbackQuery();
+    await ctx.answerCallbackQuery('✅ Qo\'shildi!');
     const itemId = ctx.match![1];
     const chatId = ctx.chat!.id;
     const cart = getCart(chatId);
@@ -105,7 +130,9 @@ export function registerOrderHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard()
       .text('➕ Yana qo\'shish', 'order_start')
-      .text('🛒 Savatni ko\'rish', 'cart_view');
+      .text('🛒 Savatni ko\'rish', 'cart_view')
+      .row()
+      .text('🏠 Bosh menyu', 'go_home');
 
     await ctx.editMessageText(
       `✅ Qo'shildi!\n\n${cartText(cart)}`,
@@ -119,41 +146,34 @@ export function registerOrderHandlers(bot: Bot) {
     const cart = getCart(ctx.chat!.id);
 
     if (!cart.items.length) {
-      const kb = new InlineKeyboard().text('📋 Menyu', 'order_start');
+      const kb = new InlineKeyboard()
+        .text('📋 Menyu', 'order_start')
+        .text('🏠 Bosh menyu', 'go_home');
       return ctx.editMessageText('🛒 Savat bo\'sh. Avval taom tanlang.', {
         reply_markup: kb,
       });
     }
 
-    const keyboard = new InlineKeyboard();
-    cart.items.forEach((item) => {
-      keyboard
-        .text(`❌ ${item.name}`, `orem_${item.id}`)
-        .text(`-`, `odec_${item.id}`)
-        .text(`${item.qty}`, `noop`)
-        .text(`+`, `oinc_${item.id}`)
-        .row();
-    });
-    keyboard
-      .text('➕ Yana qo\'shish', 'order_start')
-      .text('✅ Buyurtma berish', 'checkout')
-      .row();
-
     await ctx.editMessageText(`🛒 *Savat:*\n\n${cartText(cart)}`, {
       parse_mode: 'Markdown',
-      reply_markup: keyboard,
+      reply_markup: cartKeyboard(cart),
     });
   });
 
-  // Increment/decrement/remove
+  // Increment — fixed: properly re-render cart
   bot.callbackQuery(/^oinc_(.+)$/, async (ctx) => {
     await ctx.answerCallbackQuery();
     const cart = getCart(ctx.chat!.id);
     const item = cart.items.find((i) => i.id === ctx.match![1]);
     if (item) item.qty++;
-    return ctx.callbackQuery.data = 'cart_view';
+
+    await ctx.editMessageText(`🛒 *Savat:*\n\n${cartText(cart)}`, {
+      parse_mode: 'Markdown',
+      reply_markup: cartKeyboard(cart),
+    });
   });
 
+  // Decrement — fixed: properly re-render cart
   bot.callbackQuery(/^odec_(.+)$/, async (ctx) => {
     await ctx.answerCallbackQuery();
     const cart = getCart(ctx.chat!.id);
@@ -162,14 +182,37 @@ export function registerOrderHandlers(bot: Bot) {
       cart.items[idx].qty--;
       if (cart.items[idx].qty <= 0) cart.items.splice(idx, 1);
     }
-    return ctx.callbackQuery.data = 'cart_view';
+
+    if (!cart.items.length) {
+      const kb = new InlineKeyboard()
+        .text('📋 Menyu', 'order_start')
+        .text('🏠 Bosh menyu', 'go_home');
+      return ctx.editMessageText('🛒 Savat bo\'sh. Avval taom tanlang.', { reply_markup: kb });
+    }
+
+    await ctx.editMessageText(`🛒 *Savat:*\n\n${cartText(cart)}`, {
+      parse_mode: 'Markdown',
+      reply_markup: cartKeyboard(cart),
+    });
   });
 
+  // Remove item — fixed: properly re-render cart
   bot.callbackQuery(/^orem_(.+)$/, async (ctx) => {
     await ctx.answerCallbackQuery();
     const cart = getCart(ctx.chat!.id);
     cart.items = cart.items.filter((i) => i.id !== ctx.match![1]);
-    return ctx.callbackQuery.data = 'cart_view';
+
+    if (!cart.items.length) {
+      const kb = new InlineKeyboard()
+        .text('📋 Menyu', 'order_start')
+        .text('🏠 Bosh menyu', 'go_home');
+      return ctx.editMessageText('🛒 Savat bo\'sh. Avval taom tanlang.', { reply_markup: kb });
+    }
+
+    await ctx.editMessageText(`🛒 *Savat:*\n\n${cartText(cart)}`, {
+      parse_mode: 'Markdown',
+      reply_markup: cartKeyboard(cart),
+    });
   });
 
   bot.callbackQuery('noop', async (ctx) => {
@@ -180,9 +223,16 @@ export function registerOrderHandlers(bot: Bot) {
   bot.callbackQuery('checkout', async (ctx) => {
     await ctx.answerCallbackQuery();
     const cart = getCart(ctx.chat!.id);
-    if (!cart.items.length) return ctx.reply('Savat bo\'sh.');
+    if (!cart.items.length) {
+      const kb = new InlineKeyboard().text('🏠 Bosh menyu', 'go_home');
+      return ctx.editMessageText('Savat bo\'sh.', { reply_markup: kb });
+    }
     cart.step = 'name';
-    await ctx.reply('👤 Ismingizni yozing:');
+    const kb = new InlineKeyboard().text('❌ Bekor qilish', 'order_cancel');
+    await ctx.editMessageText(
+      `🛒 *Buyurtma*\n\n${cartText(cart)}\n\n👤 Ismingizni yozing:`,
+      { parse_mode: 'Markdown', reply_markup: kb },
+    );
   });
 
   // Handle text messages for order flow
@@ -194,7 +244,8 @@ export function registerOrderHandlers(bot: Bot) {
     if (cart.step === 'name') {
       cart.customerName = ctx.message.text;
       cart.step = 'phone';
-      await ctx.reply('📞 Telefon raqamingizni yozing:');
+      const kb = new InlineKeyboard().text('❌ Bekor qilish', 'order_cancel');
+      await ctx.reply('📞 Telefon raqamingizni yozing:', { reply_markup: kb });
       return;
     }
 
@@ -235,7 +286,6 @@ export function registerOrderHandlers(bot: Bot) {
       qty: i.qty,
     }));
 
-    // Save to DB
     const { data: order, error } = await supabase
       .from('orders')
       .insert({
@@ -251,7 +301,8 @@ export function registerOrderHandlers(bot: Bot) {
 
     if (error) {
       console.error('Order insert error:', error);
-      return ctx.reply('❌ Xatolik yuz berdi. Qayta urinib ko\'ring.');
+      const kb = new InlineKeyboard().text('🏠 Bosh menyu', 'go_home');
+      return ctx.reply('❌ Xatolik yuz berdi. Qayta urinib ko\'ring.', { reply_markup: kb });
     }
 
     // Notify admin group
@@ -275,14 +326,13 @@ export function registerOrderHandlers(bot: Bot) {
       );
     }
 
-    // Clear cart
     carts.delete(chatId);
 
+    const kb = new InlineKeyboard().text('🏠 Bosh menyu', 'go_home_new');
     await ctx.editMessageText(
       `✅ *Buyurtma qabul qilindi!*\n\n` +
-      `Tez orada siz bilan bog'lanamiz.\n` +
-      `Rahmat! 🙏`,
-      { parse_mode: 'Markdown' },
+      `Tez orada siz bilan bog'lanamiz.\nRahmat! 🙏`,
+      { parse_mode: 'Markdown', reply_markup: kb },
     );
   });
 
@@ -290,7 +340,8 @@ export function registerOrderHandlers(bot: Bot) {
   bot.callbackQuery('order_cancel', async (ctx) => {
     await ctx.answerCallbackQuery();
     carts.delete(ctx.chat!.id);
-    await ctx.editMessageText('❌ Buyurtma bekor qilindi.');
+    const kb = new InlineKeyboard().text('🏠 Bosh menyu', 'go_home');
+    await ctx.editMessageText('❌ Buyurtma bekor qilindi.', { reply_markup: kb });
   });
 
   // Admin confirm/cancel order
