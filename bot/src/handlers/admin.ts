@@ -235,7 +235,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     categories.forEach((cat: any, i: number) => {
-      keyboard.text(`${cat.icon || ''} ${cat.name}`, `aecat_${cat.id}`);
+      keyboard.text(`${cat.name}`, `aecat_${cat.id}`);
       if (i % 2 === 1) keyboard.row();
     });
     if (categories.length % 2 === 1) keyboard.row();
@@ -331,7 +331,7 @@ export function registerAdminHandlers(bot: Bot) {
       const { data: cats } = await supabase.from('categories').select('*').order('display_order');
       const keyboard = new InlineKeyboard();
       cats?.forEach((c: any, i: number) => {
-        keyboard.text(`${c.icon || ''} ${c.name}`, `aesetcat_${c.id}`);
+        keyboard.text(`${c.name}`, `aesetcat_${c.id}`);
         if (i % 2 === 1) keyboard.row();
       });
       if ((cats?.length || 0) % 2 === 1) keyboard.row();
@@ -412,7 +412,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     categories.forEach((cat: any, i: number) => {
-      keyboard.text(`${cat.icon || ''} ${cat.name}`, `adcat_${cat.id}`);
+      keyboard.text(`${cat.name}`, `adcat_${cat.id}`);
       if (i % 2 === 1) keyboard.row();
     });
     if (categories.length % 2 === 1) keyboard.row();
@@ -534,7 +534,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     cats.forEach((c: any) => {
-      keyboard.text(`${c.icon || ''} ${c.name}`, `eccat_${c.id}`).row();
+      keyboard.text(`${c.name}`, `eccat_${c.id}`).row();
     });
     keyboard.text('⬅️ Admin panel', 'admin_panel');
 
@@ -559,18 +559,6 @@ export function registerAdminHandlers(bot: Bot) {
   });
 
   bot.callbackQuery('ec_skip_name', async (ctx) => {
-    if (!isAdmin(ctx)) return ctx.answerCallbackQuery();
-    await ctx.answerCallbackQuery();
-    const session = sessions.get(ctx.chat!.id);
-    if (!session) return;
-    session.step = 'editcat_icon';
-    const kb = new InlineKeyboard()
-      .text('⏩ O\'tkazish', 'ec_skip_icon')
-      .text('❌ Bekor qilish', 'admin_panel');
-    await ctx.editMessageText('✏️ Yangi emoji yozing yoki o\'tkazing:', { reply_markup: kb });
-  });
-
-  bot.callbackQuery('ec_skip_icon', async (ctx) => {
     if (!isAdmin(ctx)) return ctx.answerCallbackQuery();
     await ctx.answerCallbackQuery();
     sessions.delete(ctx.chat!.id);
@@ -604,7 +592,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     cats.forEach((c: any) => {
-      keyboard.text(`${c.icon || ''} ${c.name}`, `dccat_${c.id}`).row();
+      keyboard.text(`${c.name}`, `dccat_${c.id}`).row();
     });
     keyboard.text('⬅️ Admin panel', 'admin_panel');
 
@@ -828,7 +816,7 @@ export function registerAdminHandlers(bot: Bot) {
         const { data: cats } = await supabase.from('categories').select('*').order('display_order');
         const keyboard = new InlineKeyboard();
         cats?.forEach((c: any, i: number) => {
-          keyboard.text(`${c.icon || ''} ${c.name}`, `aacat_${c.id}`);
+          keyboard.text(`${c.name}`, `aacat_${c.id}`);
           if (i % 2 === 1) keyboard.row();
         });
         if ((cats?.length || 0) % 2 === 1) keyboard.row();
@@ -865,40 +853,19 @@ export function registerAdminHandlers(bot: Bot) {
     }
 
     // ─── Add category flow ───
-    if (session.action === 'addcat') {
-      if (session.step === 'name') {
-        session.data.name = text;
-        session.step = 'icon';
-        const kb = new InlineKeyboard().text('❌ Bekor qilish', 'admin_panel');
-        await ctx.reply('📁 Emoji ikonka yuboring (masalan: 🍚):', { reply_markup: kb });
-        return;
-      }
-      if (session.step === 'icon') {
-        await supabase.from('categories').insert({
-          name: session.data.name,
-          icon: text,
-        });
-        sessions.delete(ctx.chat.id);
-        const kb = new InlineKeyboard()
-          .text('📁 Yana qo\'shish', 'a_addcat')
-          .text('⬅️ Admin panel', 'admin_panel');
-        await ctx.reply(`✅ "${session.data.name}" kategoriyasi qo'shildi!`, { reply_markup: kb });
-        return;
-      }
+    if (session.action === 'addcat' && session.step === 'name') {
+      await supabase.from('categories').insert({ name: text });
+      sessions.delete(ctx.chat.id);
+      const kb = new InlineKeyboard()
+        .text('📁 Yana qo\'shish', 'a_addcat')
+        .text('⬅️ Admin panel', 'admin_panel');
+      await ctx.reply(`✅ "${text}" kategoriyasi qo'shildi!`, { reply_markup: kb });
+      return;
     }
 
     // ─── Edit category flow ───
     if (session.action === 'editcat' && session.step === 'editcat_name') {
       await supabase.from('categories').update({ name: text }).eq('id', session.data.catId);
-      session.step = 'editcat_icon';
-      const kb = new InlineKeyboard()
-        .text('⏩ O\'tkazish', 'ec_skip_icon')
-        .text('❌ Bekor qilish', 'admin_panel');
-      await ctx.reply('✏️ Yangi emoji yozing yoki o\'tkazing:', { reply_markup: kb });
-      return;
-    }
-    if (session.action === 'editcat' && session.step === 'editcat_icon') {
-      await supabase.from('categories').update({ icon: text }).eq('id', session.data.catId);
       sessions.delete(ctx.chat.id);
       const kb = new InlineKeyboard()
         .text('📁 Yana tahrirlash', 'a_editcat')
