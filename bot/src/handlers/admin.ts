@@ -1,4 +1,8 @@
 import { Bot, InlineKeyboard } from 'grammy';
+import { execSync } from 'child_process';
+import { writeFileSync, readFileSync, unlinkSync, mkdirSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import { supabase } from '../supabase';
 import { isAdmin } from '../middleware/auth';
 
@@ -982,7 +986,10 @@ export function registerAdminHandlers(bot: Bot) {
       const response = await fetch(url);
       const buffer = Buffer.from(await response.arrayBuffer());
 
-      const storagePath = `models/${ext}/${Date.now()}.${ext}`;
+      const ts = Date.now();
+
+      // Upload the original file
+      const storagePath = `models/${ext}/${ts}.${ext}`;
       const contentType = ext === 'glb' ? 'model/gltf-binary' : 'model/vnd.usdz+zip';
 
       const { error: uploadError } = await supabase.storage
@@ -1000,27 +1007,74 @@ export function registerAdminHandlers(bot: Bot) {
         .from('media')
         .getPublicUrl(storagePath);
 
+      // Auto-convert USDZ → GLB
+      let convertedGlbUrl: string | null = null;
+      if (ext === 'usdz') {
+        try {
+          await ctx.reply('🔄 USDZ → GLB konvertatsiya qilinmoqda...');
+          const tmpDir = tmpdir();
+          const inputPath = join(tmpDir, `${ts}.usdz`);
+          const outputPath = join(tmpDir, `${ts}.glb`);
+          writeFileSync(inputPath, buffer);
+
+          execSync(`python3 /app/scripts/convert_usdz.py "${inputPath}" "${outputPath}"`, {
+            timeout: 60000,
+          });
+
+          const glbBuffer = readFileSync(outputPath);
+          const glbStoragePath = `models/glb/${ts}_converted.glb`;
+
+          const { error: glbError } = await supabase.storage
+            .from('media')
+            .upload(glbStoragePath, glbBuffer, { contentType: 'model/gltf-binary' });
+
+          if (!glbError) {
+            const { data: { publicUrl: glbPublicUrl } } = supabase.storage
+              .from('media')
+              .getPublicUrl(glbStoragePath);
+            convertedGlbUrl = glbPublicUrl;
+          }
+
+          // Cleanup temp files
+          try { unlinkSync(inputPath); } catch {}
+          try { unlinkSync(outputPath); } catch {}
+        } catch (err) {
+          console.error('USDZ→GLB conversion failed:', err);
+          await ctx.reply('⚠️ Avtomatik konvertatsiya ishlamadi. .glb faylni ham yuboring.');
+        }
+      }
+
       if (session.action === 'edit') {
         const update: Record<string, any> = { model_status: 'ready' };
         if (ext === 'glb') update.model_glb_url = publicUrl;
-        if (ext === 'usdz') update.model_usdz_url = publicUrl;
+        if (ext === 'usdz') {
+          update.model_usdz_url = publicUrl;
+          if (convertedGlbUrl) update.model_glb_url = convertedGlbUrl;
+        }
         await supabase.from('menu_items').update(update).eq('id', session.data.itemId);
         sessions.delete(ctx.chat.id);
         const kb = new InlineKeyboard()
           .text('✏️ Yana tahrirlash', 'a_edit')
           .text('⬅️ Admin panel', 'admin_panel');
-        await ctx.reply(`✅ 3D model (.${ext}) yangilandi!`, { reply_markup: kb });
+        const extra = convertedGlbUrl ? '\n🔄 GLB avtomatik yaratildi!' : '';
+        await ctx.reply(`✅ 3D model (.${ext}) yangilandi!${extra}`, { reply_markup: kb });
         return;
       }
 
       // Add flow
       if (ext === 'glb') session.data.modelGlbUrl = publicUrl;
-      if (ext === 'usdz') session.data.modelUsdzUrl = publicUrl;
+      if (ext === 'usdz') {
+        session.data.modelUsdzUrl = publicUrl;
+        if (convertedGlbUrl) session.data.modelGlbUrl = convertedGlbUrl;
+      }
 
+      const hasGlb = session.data.modelGlbUrl;
       const kb = new InlineKeyboard()
         .text('Tayyor, davom etish →', 'aamodel_done');
+      const extra = convertedGlbUrl ? '\n🔄 GLB avtomatik yaratildi!' : '';
+      const needGlb = !hasGlb ? '\n⚠️ .glb faylni ham yuboring (web uchun kerak).' : '';
       await ctx.reply(
-        `✅ .${ext} yuklandi!\n\nBoshqa formatni ham yuborishingiz mumkin (.${ext === 'glb' ? 'usdz' : 'glb'}) yoki davom eting:`,
+        `✅ .${ext} yuklandi!${extra}${needGlb}\n\nBoshqa formatni ham yuborishingiz mumkin yoki davom eting:`,
         { reply_markup: kb },
       );
       return;
