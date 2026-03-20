@@ -32,13 +32,13 @@ export default function MenuCard({ item, onAR, onAddToCart }: MenuCardProps) {
   return (
     <div className="bg-white-warm border border-sand/60 rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(61,33,23,0.08)] transition-all duration-200 group">
       {/* Image */}
-      <div className="relative h-44">
+      <div className="relative aspect-[4/3] bg-sand-light/30">
         {item.image_url ? (
           <Image
             src={item.image_url}
             alt={item.name}
             fill
-            className="object-contain p-2"
+            className="object-contain"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
         ) : (

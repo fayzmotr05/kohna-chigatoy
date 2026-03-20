@@ -361,7 +361,7 @@ export default function MenuPageClient({ categories, items }: Props) {
                                 src={featured.image_url}
                                 alt={featured.name}
                                 fill
-                                className="object-cover"
+                                className="object-contain"
                                 sizes="(max-width: 768px) 100vw, 50vw"
                               />
                             ) : (
