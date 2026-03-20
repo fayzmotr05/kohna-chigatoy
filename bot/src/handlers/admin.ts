@@ -1017,13 +1017,31 @@ export function registerAdminHandlers(bot: Bot) {
           const outputPath = join(tmpDir, `${ts}.glb`);
           writeFileSync(inputPath, buffer);
 
-          execSync(`python3 /app/scripts/convert_usdz.py "${inputPath}" "${outputPath}"`, {
-            timeout: 60000,
+          // Try Python conversion
+          const scriptPath = join(__dirname, '..', '..', 'scripts', 'convert_usdz.py');
+          execSync(`python3 "${scriptPath}" "${inputPath}" "${outputPath}"`, {
+            timeout: 120000,
+            stdio: ['pipe', 'pipe', 'pipe'],
           });
 
-          const glbBuffer = readFileSync(outputPath);
-          const glbStoragePath = `models/glb/${ts}_converted.glb`;
+          let glbBuffer = readFileSync(outputPath);
 
+          // Optimize GLB if > 15MB using gltf-transform
+          if (glbBuffer.length > 15 * 1024 * 1024) {
+            try {
+              const optimizedPath = join(tmpDir, `${ts}_opt.glb`);
+              execSync(
+                `gltf-transform optimize "${outputPath}" "${optimizedPath}" --compress meshopt --texture-compress webp`,
+                { timeout: 120000, stdio: ['pipe', 'pipe', 'pipe'] },
+              );
+              glbBuffer = readFileSync(optimizedPath);
+              try { unlinkSync(optimizedPath); } catch {}
+            } catch {
+              // Optimization failed — use unoptimized GLB
+            }
+          }
+
+          const glbStoragePath = `models/glb/${ts}_converted.glb`;
           const { error: glbError } = await supabase.storage
             .from('media')
             .upload(glbStoragePath, glbBuffer, { contentType: 'model/gltf-binary' });
@@ -1041,6 +1059,38 @@ export function registerAdminHandlers(bot: Bot) {
         } catch (err) {
           console.error('USDZ→GLB conversion failed:', err);
           await ctx.reply('⚠️ Avtomatik konvertatsiya ishlamadi. .glb faylni ham yuboring.');
+        }
+      }
+
+      // Optimize GLB if uploaded directly and > 15MB
+      if (ext === 'glb' && buffer.length > 15 * 1024 * 1024) {
+        try {
+          await ctx.reply('🔄 GLB optimizatsiya qilinmoqda...');
+          const tmpDir = tmpdir();
+          const inputPath = join(tmpDir, `${ts}.glb`);
+          const optimizedPath = join(tmpDir, `${ts}_opt.glb`);
+          writeFileSync(inputPath, buffer);
+
+          execSync(
+            `gltf-transform optimize "${inputPath}" "${optimizedPath}" --compress meshopt --texture-compress webp`,
+            { timeout: 120000, stdio: ['pipe', 'pipe', 'pipe'] },
+          );
+
+          const optBuffer = readFileSync(optimizedPath);
+
+          // Re-upload optimized version
+          await supabase.storage.from('media').remove([storagePath]);
+          await supabase.storage.from('media').upload(storagePath, optBuffer, { contentType: 'model/gltf-binary' });
+
+          try { unlinkSync(inputPath); } catch {}
+          try { unlinkSync(optimizedPath); } catch {}
+
+          const sizeMB = (optBuffer.length / (1024 * 1024)).toFixed(1);
+          const origMB = (buffer.length / (1024 * 1024)).toFixed(1);
+          await ctx.reply(`✅ Optimizatsiya: ${origMB}MB → ${sizeMB}MB`);
+        } catch (err) {
+          console.error('GLB optimization failed:', err);
+          // Keep original file
         }
       }
 
