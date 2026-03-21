@@ -20,7 +20,7 @@ export default function Footer() {
       {/* Warm divider */}
       <div className="divider-warm" />
 
-      <div className="relative mx-auto max-w-7xl 2xl:max-w-[1600px] px-4 sm:px-6 lg:px-8 py-14">
+      <div className="relative mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Brand */}
           <div>

@@ -15,7 +15,7 @@ export default function HeroSection() {
       {/* Subtle pattern */}
       <div className="absolute inset-0 pattern-geo opacity-[0.05] z-10" />
 
-      <div className="relative z-20 text-center px-4 max-w-3xl lg:max-w-4xl mx-auto">
+      <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
         {/* Decorative arch trio */}
         <ScrollReveal className="flex justify-center gap-1.5 mb-8">
           {[0, 1, 2].map((i) => (

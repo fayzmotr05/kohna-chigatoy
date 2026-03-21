@@ -29,7 +29,7 @@ export default function Navbar() {
   if (isTelegram) {
     return (
       <nav className="fixed top-0 left-0 right-0 z-50 bg-bg-dark-soft/95 backdrop-blur-sm shadow-lg">
-        <div className="mx-auto max-w-7xl px-4">
+        <div className="mx-auto max-w-[1800px] px-4">
           <div className="flex h-12 items-center justify-between">
             <span className="font-display text-lg font-bold text-text-on-dark">
               Ko&apos;hna Chig&apos;atoy
@@ -49,7 +49,7 @@ export default function Navbar() {
           : 'bg-transparent'
       }`}
     >
-      <div className="mx-auto max-w-7xl 2xl:max-w-[1600px] px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">

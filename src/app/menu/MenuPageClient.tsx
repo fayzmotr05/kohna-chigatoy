@@ -220,7 +220,7 @@ export default function MenuPageClient({ categories, items }: Props) {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(42,24,16,0.3)_0%,rgba(42,24,16,0.8)_100%)]" />
         <div className="absolute inset-0 pattern-geo opacity-[0.04]" />
 
-        <div className="relative mx-auto max-w-7xl 2xl:max-w-[1600px]">
+        <div className="relative mx-auto max-w-[1800px]">
           {/* Arch motif — hidden in Telegram */}
           {!isTelegram && (
             <>
@@ -290,7 +290,7 @@ export default function MenuPageClient({ categories, items }: Props) {
 
       {/* Sticky category bar */}
       <div className={`sticky ${isTelegram ? 'top-12' : 'top-16'} z-30 bg-cream border-b border-sand/60 shadow-[0_2px_8px_rgba(61,33,23,0.04)]`}>
-        <div className="mx-auto max-w-7xl 2xl:max-w-[1600px] px-4 overflow-x-auto scrollbar-hide">
+        <div className="mx-auto max-w-[1800px] px-4 overflow-x-auto scrollbar-hide">
           <div className="flex gap-1 py-2.5">
             {categories.map((cat) => (
               <button
@@ -311,7 +311,7 @@ export default function MenuPageClient({ categories, items }: Props) {
 
       {/* Menu content */}
       <section className="bg-cream py-8 min-h-screen">
-        <div className="mx-auto max-w-7xl 2xl:max-w-[1600px] px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
           {/* Empty state */}
           {grouped.length === 0 && (
             <div className="text-center py-24 text-text-secondary">
