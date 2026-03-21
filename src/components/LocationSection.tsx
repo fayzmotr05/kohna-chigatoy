@@ -15,7 +15,7 @@ export default function LocationSection() {
 
   return (
     <section id="location" className="bg-cream py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl 2xl:max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <ScrollReveal className="text-center mb-14">
           <div className="flex justify-center gap-1 mb-4">
             {[0, 1, 2].map((i) => (

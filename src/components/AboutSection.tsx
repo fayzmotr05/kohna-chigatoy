@@ -16,7 +16,7 @@ export default function AboutSection() {
   return (
     <section id="about" className="relative bg-cream py-24 overflow-hidden">
       <div className="absolute inset-0 pattern-geo opacity-[0.03]" />
-      <div className="relative mx-auto max-w-4xl px-4">
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <ScrollReveal className="text-center mb-16">
           {/* Arch motif + heading */}
           <div className="flex justify-center gap-1 mb-5">

@@ -20,7 +20,7 @@ export default function FeaturedSection({ items }: FeaturedSectionProps) {
 
   return (
     <section className="bg-sand-light py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl 2xl:max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <ScrollReveal className="text-center mb-14">
           <div className="flex justify-center gap-1 mb-4">
             {[0, 1, 2].map((i) => (
@@ -33,7 +33,7 @@ export default function FeaturedSection({ items }: FeaturedSectionProps) {
           <p className="text-text-secondary">{t.featured.subtitle}</p>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
           {items.map((item, index) => (
             <ScrollReveal key={item.id} delay={index * 80}>
               <div className="bg-white-warm border border-sand/60 rounded-lg overflow-hidden hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(61,33,23,0.08)] transition-all duration-200 group">
