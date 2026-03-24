@@ -53,6 +53,8 @@ export const ru: TranslationKeys = {
     clearSearch: 'Сбросить поиск',
     popular: 'Хит',
     ar: 'AR',
+    gridView: 'Сетка',
+    listView: 'Список',
   },
   footer: {
     description: 'Национальная и уйгурская кухня. Старинная атмосфера, настоящий вкус.',
@@ -96,6 +98,8 @@ export const ru: TranslationKeys = {
     bookSuccessDesc: 'Мы с вами свяжемся.',
     bookError: 'Произошла ошибка.',
     persons: 'чел.',
+    regFailed: 'Ошибка регистрации',
+    networkError: 'Ошибка сети',
   },
   ar: {
     step1Title: 'Что такое AR?',

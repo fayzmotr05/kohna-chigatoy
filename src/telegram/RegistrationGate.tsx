@@ -57,10 +57,10 @@ export default function RegistrationGate({ onClose, onRegistered }: Registration
         onRegistered();
       } else {
         const data = await res.json();
-        setError(data.error || 'Registration failed');
+        setError(data.error || t.telegram.regFailed);
       }
     } catch {
-      setError('Network error');
+      setError(t.telegram.networkError);
     } finally {
       setSubmitting(false);
     }

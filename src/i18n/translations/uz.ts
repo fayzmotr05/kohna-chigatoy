@@ -51,6 +51,8 @@ export const uz = {
     clearSearch: 'Qidiruvni tozalash',
     popular: 'Mashhur',
     ar: 'AR',
+    gridView: "Katak ko'rinish",
+    listView: "Ro'yxat ko'rinish",
   },
   footer: {
     description: "Milliy va uyg'ur taomlar. Qadimiy muhit, haqiqiy ta'm.",
@@ -94,6 +96,8 @@ export const uz = {
     bookSuccessDesc: 'Biz siz bilan bog\'lanamiz.',
     bookError: 'Xatolik yuz berdi.',
     persons: 'kishi',
+    regFailed: "Ro'yxatdan o'tish muvaffaqiyatsiz",
+    networkError: 'Tarmoq xatosi',
   },
   ar: {
     step1Title: 'AR rejim nima?',

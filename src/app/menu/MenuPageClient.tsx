@@ -272,14 +272,14 @@ export default function MenuPageClient({ categories, items }: Props) {
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2 transition-all ${viewMode === 'grid' ? 'bg-tan/30 text-cream' : 'text-brown-light/50 hover:text-cream'}`}
-                aria-label="Grid ko'rinish"
+                aria-label={t.menu.gridView}
               >
                 <Grid3X3 size={16} />
               </button>
               <button
                 onClick={() => setViewMode('list')}
                 className={`p-2 transition-all ${viewMode === 'list' ? 'bg-tan/30 text-cream' : 'text-brown-light/50 hover:text-cream'}`}
-                aria-label="List ko'rinish"
+                aria-label={t.menu.listView}
               >
                 <List size={16} />
               </button>

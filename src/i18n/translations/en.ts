@@ -53,6 +53,8 @@ export const en: TranslationKeys = {
     clearSearch: 'Clear search',
     popular: 'Popular',
     ar: 'AR',
+    gridView: 'Grid view',
+    listView: 'List view',
   },
   footer: {
     description: 'Traditional and Uyghur cuisine. Timeless ambiance, authentic flavors.',
@@ -96,6 +98,8 @@ export const en: TranslationKeys = {
     bookSuccessDesc: 'We will contact you shortly.',
     bookError: 'Something went wrong.',
     persons: 'guests',
+    regFailed: 'Registration failed',
+    networkError: 'Network error',
   },
   ar: {
     step1Title: 'What is AR?',
