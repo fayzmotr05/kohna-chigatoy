@@ -131,28 +131,17 @@ export default function MenuPageClient({ categories, items }: Props) {
     }
   };
 
-  const handleAR = useCallback((item: MenuItem) => {
-    const seen = localStorage.getItem('ar_onboarding_seen');
-    if (!seen) {
-      setArItem(item);
-      setShowOnboarding(true);
-      return;
-    }
-    // Launch native AR directly — skip in-app 3D preview
-    launchNativeAR(item);
-  }, []);
-
   /** Convert Supabase storage URL to our clean domain URL */
-  function cleanModelUrl(url: string): string {
+  const cleanModelUrl = useCallback((url: string): string => {
     const supabasePath = '/storage/v1/object/public/media/models/';
     const idx = url.indexOf(supabasePath);
     if (idx !== -1) {
       return `https://kohnachigatoy.uz/models/${url.substring(idx + supabasePath.length)}`;
     }
     return url;
-  }
+  }, []);
 
-  function launchNativeAR(item: MenuItem) {
+  const launchNativeAR = useCallback((item: MenuItem) => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const isAndroidDevice = /Android/i.test(navigator.userAgent);
@@ -195,7 +184,17 @@ export default function MenuPageClient({ categories, items }: Props) {
         window.open(url, '_blank');
       }
     }
-  }
+  }, [cleanModelUrl]);
+
+  const handleAR = useCallback((item: MenuItem) => {
+    const seen = localStorage.getItem('ar_onboarding_seen');
+    if (!seen) {
+      setArItem(item);
+      setShowOnboarding(true);
+      return;
+    }
+    launchNativeAR(item);
+  }, [launchNativeAR]);
 
   const handleOnboardingComplete = () => {
     localStorage.setItem('ar_onboarding_seen', 'true');
