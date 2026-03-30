@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
   }
 
-  // Notify admin via Telegram Bot API
+  // Notify admin via Telegram Bot API (with confirm/cancel buttons)
   const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (adminChatId && botToken) {
@@ -118,7 +118,15 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           chat_id: adminChatId,
           text,
-          parse_mode: 'HTML',
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: '✅ Tasdiqlash', callback_data: `aconfirm_${order.id}` },
+                { text: '❌ Bekor qilish', callback_data: `acancel_${order.id}` },
+              ],
+            ],
+          },
         }),
       });
     } catch (e) {

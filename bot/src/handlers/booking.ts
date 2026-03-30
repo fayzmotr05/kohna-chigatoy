@@ -6,7 +6,7 @@ interface BookingSession {
   step: 'date' | 'time' | 'size' | 'confirm';
   date?: string;
   time?: string;
-  partySize?: string;
+  partySize?: number;
 }
 
 const bookingSessions = new Map<number, BookingSession>();
@@ -106,11 +106,17 @@ export function registerBookingHandlers(bot: Bot) {
   // ─── Party size buttons ───
   function partySizeKeyboard(): InlineKeyboard {
     return new InlineKeyboard()
-      .text('1-2 kishi', 'bsize_1-2')
-      .text('3-4 kishi', 'bsize_3-4')
+      .text('1 kishi', 'bsize_1')
+      .text('2 kishi', 'bsize_2')
+      .text('3 kishi', 'bsize_3')
       .row()
-      .text('5-6 kishi', 'bsize_5-6')
-      .text('7+ kishi', 'bsize_7+')
+      .text('4 kishi', 'bsize_4')
+      .text('5 kishi', 'bsize_5')
+      .text('6 kishi', 'bsize_6')
+      .row()
+      .text('8 kishi', 'bsize_8')
+      .text('10 kishi', 'bsize_10')
+      .text('15+ kishi', 'bsize_15')
       .row()
       .text('❌ Bekor qilish', 'booking_cancel');
   }
@@ -138,7 +144,7 @@ export function registerBookingHandlers(bot: Bot) {
     const session = bookingSessions.get(chatId);
     if (!session || session.step !== 'size') return;
 
-    session.partySize = ctx.match![1];
+    session.partySize = parseInt(ctx.match![1]);
     session.step = 'confirm';
 
     const user = await getRegisteredUser(ctx.from!.id);
