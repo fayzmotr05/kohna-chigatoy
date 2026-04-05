@@ -8,6 +8,7 @@ const categoryConfig: Record<string, { gradient: string; Icon: any }> = {
 };
 
 interface Props {
+  /** Pass the Uzbek category name (name_uz) — used to select the icon/gradient */
   categoryName?: string | null;
   className?: string;
 }

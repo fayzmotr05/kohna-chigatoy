@@ -48,8 +48,12 @@ export default function CheckoutSheet({ onClose, onNeedRegistration }: CheckoutS
         clear();
         webApp?.HapticFeedback.notificationOccurred('success');
       } else {
-        const data = await res.json();
-        setError(data.error || t.telegram.orderError);
+        try {
+          const data = await res.json();
+          setError(data.error || t.telegram.orderError);
+        } catch {
+          setError(t.telegram.orderError);
+        }
         webApp?.HapticFeedback.notificationOccurred('error');
       }
     } catch {

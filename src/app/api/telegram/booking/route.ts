@@ -26,7 +26,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Not registered' }, { status: 403 });
   }
 
-  const body = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
   const { date, time, party_size, notes } = body;
 
   // Validate date (must be tomorrow or later)

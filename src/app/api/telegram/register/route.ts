@@ -10,11 +10,15 @@ export async function POST(request: Request) {
 
   const result = validateInitData(initData);
   if (!result.valid) {
-    console.error('Registration validation failed:', result.error, 'initData length:', initData.length, 'token set:', !!process.env.TELEGRAM_BOT_TOKEN);
     return NextResponse.json({ error: result.error }, { status: 401 });
   }
 
-  const body = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
   const { phone, name } = body;
 
   if (!phone || !name) {

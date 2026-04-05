@@ -32,20 +32,15 @@ export function validateInitData(initData: string): ValidationResult {
     return { valid: false, error: 'initData is empty' };
   }
 
-  // Parse raw query string pairs — avoid URLSearchParams which can mangle encoding
-  const pairs = initData.split('&').map((p) => {
-    const idx = p.indexOf('=');
-    return idx === -1 ? [p, ''] : [p.slice(0, idx), p.slice(idx + 1)];
-  });
+  // Use URLSearchParams for correct decoding of the query string
+  const params = new URLSearchParams(initData);
 
-  const hashPair = pairs.find(([k]) => k === 'hash');
-  const hash = hashPair ? decodeURIComponent(hashPair[1]) : null;
+  const hash = params.get('hash');
   if (!hash) {
     return { valid: false, error: 'Missing hash' };
   }
 
-  const authDatePair = pairs.find(([k]) => k === 'auth_date');
-  const authDate = authDatePair ? decodeURIComponent(authDatePair[1]) : null;
+  const authDate = params.get('auth_date');
   if (!authDate) {
     return { valid: false, error: 'Missing auth_date' };
   }
@@ -56,12 +51,17 @@ export function validateInitData(initData: string): ValidationResult {
     return { valid: false, error: 'initData expired' };
   }
 
-  // Build data-check-string: sorted key=value pairs (decoded), excluding hash
-  const dataCheckString = pairs
-    .filter(([k]) => k !== 'hash')
-    .map(([k, v]) => `${decodeURIComponent(k)}=${decodeURIComponent(v)}`)
-    .sort()
-    .join('\n');
+  // Build data-check-string per Telegram spec:
+  // sorted "key=value" pairs separated by \n, excluding "hash"
+  // Values must be the decoded form (URLSearchParams gives us decoded values)
+  const entries: string[] = [];
+  params.forEach((value, key) => {
+    if (key !== 'hash') {
+      entries.push(`${key}=${value}`);
+    }
+  });
+  entries.sort();
+  const dataCheckString = entries.join('\n');
 
   // secret_key = HMAC-SHA256("WebAppData", bot_token)
   const secretKey = crypto
@@ -76,16 +76,19 @@ export function validateInitData(initData: string): ValidationResult {
     .digest('hex');
 
   // Timing-safe comparison
-  const hashBuffer = Buffer.from(hash, 'hex');
-  const computedBuffer = Buffer.from(computedHash, 'hex');
+  try {
+    const hashBuffer = Buffer.from(hash, 'hex');
+    const computedBuffer = Buffer.from(computedHash, 'hex');
 
-  if (hashBuffer.length !== computedBuffer.length || !crypto.timingSafeEqual(hashBuffer, computedBuffer)) {
-    return { valid: false, error: 'Invalid hash' };
+    if (hashBuffer.length !== computedBuffer.length || !crypto.timingSafeEqual(hashBuffer, computedBuffer)) {
+      return { valid: false, error: 'Invalid hash' };
+    }
+  } catch {
+    return { valid: false, error: 'Invalid hash format' };
   }
 
   // Extract user
-  const userPair = pairs.find(([k]) => k === 'user');
-  const userRaw = userPair ? decodeURIComponent(userPair[1]) : null;
+  const userRaw = params.get('user');
   if (!userRaw) {
     return { valid: false, error: 'Missing user data' };
   }

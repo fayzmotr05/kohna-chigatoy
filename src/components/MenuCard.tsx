@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { Star, Box, Plus } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getLocalizedName, getLocalizedDescription } from '@/lib/utils';
 import { useTranslation } from '@/i18n/LanguageContext';
 import { useTelegram } from '@/telegram/TelegramProvider';
 import { useCart } from '@/telegram/CartProvider';
@@ -16,7 +16,7 @@ interface MenuCardProps {
 }
 
 export default function MenuCard({ item, onAR, onAddToCart }: MenuCardProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { isTelegram } = useTelegram();
   const { addItem } = useCart();
   const hasAR = item.model_status === 'ready' && (item.model_glb_url || item.model_usdz_url);
@@ -25,7 +25,7 @@ export default function MenuCard({ item, onAR, onAddToCart }: MenuCardProps) {
     if (onAddToCart) {
       onAddToCart(item);
     } else {
-      addItem({ id: item.id, name: item.name, price: item.price });
+      addItem({ id: item.id, name: getLocalizedName(item, locale), price: item.price });
     }
   };
 
@@ -36,13 +36,13 @@ export default function MenuCard({ item, onAR, onAddToCart }: MenuCardProps) {
         {item.image_url ? (
           <Image
             src={item.image_url}
-            alt={item.name}
+            alt={getLocalizedName(item, locale)}
             fill
             className="object-contain"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
         ) : (
-          <PlaceholderImage categoryName={item.categories?.name} />
+          <PlaceholderImage categoryName={item.categories?.name_uz} />
         )}
 
         {/* Bottom gradient for depth */}
@@ -79,10 +79,10 @@ export default function MenuCard({ item, onAR, onAddToCart }: MenuCardProps) {
       {/* Content */}
       <div className="p-4">
         <h3 className="font-display text-base font-semibold text-brown-deep mb-1 line-clamp-1">
-          {item.name}
+          {getLocalizedName(item, locale)}
         </h3>
         <p className="text-text-secondary text-sm line-clamp-2 mb-3 min-h-[2.5rem] leading-relaxed">
-          {item.description}
+          {getLocalizedDescription(item, locale)}
         </p>
         <div className="flex items-center justify-between">
           <p className="font-display text-xl font-bold text-brown-deep">

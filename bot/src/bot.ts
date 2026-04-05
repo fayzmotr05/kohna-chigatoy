@@ -136,7 +136,7 @@ async function continueAfterRegistration(ctx: any, afterAction: string) {
 
     const keyboard = new InlineKeyboard();
     categories.forEach((cat: any, i: number) => {
-      keyboard.text(`${cat.icon || ''} ${cat.name}`, `ocat_${cat.id}`);
+      keyboard.text(`${cat.icon || ''} ${cat.name_uz}`, `ocat_${cat.id}`);
       if (i % 2 === 1) keyboard.row();
     });
     if (categories.length % 2 === 1) keyboard.row();

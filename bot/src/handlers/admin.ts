@@ -177,8 +177,8 @@ export function registerAdminHandlers(bot: Bot) {
     const hasModel = session.data.modelGlbUrl || session.data.modelUsdzUrl;
 
     const { error } = await supabase.from('menu_items').insert({
-      name: session.data.name,
-      description: session.data.description || '',
+      name_uz: session.data.name,
+      description_uz: session.data.description || '',
       price: session.data.price,
       category_id: session.data.categoryId,
       image_url: session.data.imageUrl || null,
@@ -235,7 +235,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     categories.forEach((cat: any, i: number) => {
-      keyboard.text(`${cat.name}`, `aecat_${cat.id}`);
+      keyboard.text(`${cat.name_uz}`, `aecat_${cat.id}`);
       if (i % 2 === 1) keyboard.row();
     });
     if (categories.length % 2 === 1) keyboard.row();
@@ -256,9 +256,9 @@ export function registerAdminHandlers(bot: Bot) {
 
     const { data: items } = await supabase
       .from('menu_items')
-      .select('id, name, price')
+      .select('id, name_uz, price')
       .eq('category_id', categoryId)
-      .order('name');
+      .order('name_uz');
 
     if (!items?.length) {
       const kb = new InlineKeyboard()
@@ -269,7 +269,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     items.forEach((item: any) => {
-      keyboard.text(`${item.name} (${formatPrice(item.price)})`, `aeitem_${item.id}`).row();
+      keyboard.text(`${item.name_uz} (${formatPrice(item.price)})`, `aeitem_${item.id}`).row();
     });
     keyboard.text('⬅️ Orqaga', 'a_edit').text('⬅️ Admin panel', 'admin_panel');
 
@@ -331,7 +331,7 @@ export function registerAdminHandlers(bot: Bot) {
       const { data: cats } = await supabase.from('categories').select('*').order('display_order');
       const keyboard = new InlineKeyboard();
       cats?.forEach((c: any, i: number) => {
-        keyboard.text(`${c.name}`, `aesetcat_${c.id}`);
+        keyboard.text(`${c.name_uz}`, `aesetcat_${c.id}`);
         if (i % 2 === 1) keyboard.row();
       });
       if ((cats?.length || 0) % 2 === 1) keyboard.row();
@@ -412,7 +412,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     categories.forEach((cat: any, i: number) => {
-      keyboard.text(`${cat.name}`, `adcat_${cat.id}`);
+      keyboard.text(`${cat.name_uz}`, `adcat_${cat.id}`);
       if (i % 2 === 1) keyboard.row();
     });
     if (categories.length % 2 === 1) keyboard.row();
@@ -430,7 +430,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const { data: items } = await supabase
       .from('menu_items')
-      .select('id, name')
+      .select('id, name_uz')
       .eq('category_id', ctx.match![1])
       .eq('is_available', true);
 
@@ -443,7 +443,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     items.forEach((item: any) => {
-      keyboard.text(item.name, `aditem_${item.id}`).row();
+      keyboard.text(item.name_uz, `aditem_${item.id}`).row();
     });
     keyboard.text('⬅️ Orqaga', 'a_delete').text('⬅️ Admin panel', 'admin_panel');
 
@@ -457,7 +457,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const { data: item } = await supabase
       .from('menu_items')
-      .select('name')
+      .select('name_uz')
       .eq('id', itemId)
       .single();
 
@@ -466,7 +466,7 @@ export function registerAdminHandlers(bot: Bot) {
       .text('❌ Yo\'q', 'a_delete');
 
     await ctx.editMessageText(
-      `⚠️ "${item?.name}" ni o'chirmoqchimisiz?\n\n_Menyu ro'yxatidan yashiriladi_`,
+      `⚠️ "${item?.name_uz}" ni o'chirmoqchimisiz?\n\n_Menyu ro'yxatidan yashiriladi_`,
       { parse_mode: 'Markdown', reply_markup: keyboard },
     );
   });
@@ -534,7 +534,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     cats.forEach((c: any) => {
-      keyboard.text(`${c.name}`, `eccat_${c.id}`).row();
+      keyboard.text(`${c.name_uz}`, `eccat_${c.id}`).row();
     });
     keyboard.text('⬅️ Admin panel', 'admin_panel');
 
@@ -592,7 +592,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     cats.forEach((c: any) => {
-      keyboard.text(`${c.name}`, `dccat_${c.id}`).row();
+      keyboard.text(`${c.name_uz}`, `dccat_${c.id}`).row();
     });
     keyboard.text('⬅️ Admin panel', 'admin_panel');
 
@@ -816,7 +816,7 @@ export function registerAdminHandlers(bot: Bot) {
         const { data: cats } = await supabase.from('categories').select('*').order('display_order');
         const keyboard = new InlineKeyboard();
         cats?.forEach((c: any, i: number) => {
-          keyboard.text(`${c.name}`, `aacat_${c.id}`);
+          keyboard.text(`${c.name_uz}`, `aacat_${c.id}`);
           if (i % 2 === 1) keyboard.row();
         });
         if ((cats?.length || 0) % 2 === 1) keyboard.row();
@@ -841,7 +841,10 @@ export function registerAdminHandlers(bot: Bot) {
         }
         update[field] = price;
       } else {
-        update[field] = text;
+        // Map field names to DB column names (multilingual: _uz suffix)
+        const columnMap: Record<string, string> = { name: 'name_uz', description: 'description_uz' };
+        const col = columnMap[field] || field;
+        update[col] = text;
       }
       await supabase.from('menu_items').update(update).eq('id', session.data.itemId);
       sessions.delete(ctx.chat.id);
@@ -854,7 +857,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     // ─── Add category flow ───
     if (session.action === 'addcat' && session.step === 'name') {
-      await supabase.from('categories').insert({ name: text });
+      await supabase.from('categories').insert({ name_uz: text });
       sessions.delete(ctx.chat.id);
       const kb = new InlineKeyboard()
         .text('📁 Yana qo\'shish', 'a_addcat')
@@ -865,7 +868,7 @@ export function registerAdminHandlers(bot: Bot) {
 
     // ─── Edit category flow ───
     if (session.action === 'editcat' && session.step === 'editcat_name') {
-      await supabase.from('categories').update({ name: text }).eq('id', session.data.catId);
+      await supabase.from('categories').update({ name_uz: text }).eq('id', session.data.catId);
       sessions.delete(ctx.chat.id);
       const kb = new InlineKeyboard()
         .text('📁 Yana tahrirlash', 'a_editcat')
@@ -984,12 +987,13 @@ export function registerAdminHandlers(bot: Bot) {
           const outputPath = join(tmpDir, `${ts}.glb`);
           writeFileSync(inputPath, buffer);
 
-          // Try Python conversion
+          // Try Python conversion (longer timeout for large files)
           const scriptPath = join(__dirname, '..', '..', 'scripts', 'convert_usdz.py');
-          execSync(`python3 "${scriptPath}" "${inputPath}" "${outputPath}"`, {
-            timeout: 120000,
+          const result = execSync(`python3 "${scriptPath}" "${inputPath}" "${outputPath}"`, {
+            timeout: 180000,
             stdio: ['pipe', 'pipe', 'pipe'],
           });
+          console.log('Conversion output:', result.toString());
 
           let glbBuffer = readFileSync(outputPath);
 
@@ -1023,9 +1027,15 @@ export function registerAdminHandlers(bot: Bot) {
           // Cleanup temp files
           try { unlinkSync(inputPath); } catch {}
           try { unlinkSync(outputPath); } catch {}
-        } catch (err) {
-          console.error('USDZ→GLB conversion failed:', err);
-          await ctx.reply('⚠️ Avtomatik konvertatsiya ishlamadi. .glb faylni ham yuboring.');
+        } catch (err: any) {
+          const stderr = err?.stderr?.toString?.() || err?.message || String(err);
+          console.error('USDZ→GLB conversion failed:', stderr);
+          await ctx.reply(
+            '⚠️ Avtomatik konvertatsiya ishlamadi.\n' +
+            `.glb faylni ham yuboring.\n\n` +
+            `_Xato: ${stderr.slice(0, 200)}_`,
+            { parse_mode: 'Markdown' },
+          );
         }
       }
 

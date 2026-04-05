@@ -6,7 +6,7 @@ import { Star } from 'lucide-react';
 import ScrollReveal from './ScrollReveal';
 import PlaceholderImage from './PlaceholderImage';
 import { useTranslation } from '@/i18n/LanguageContext';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getLocalizedName, getLocalizedDescription } from '@/lib/utils';
 import type { MenuItem } from '@/lib/types';
 
 interface FeaturedSectionProps {
@@ -14,7 +14,7 @@ interface FeaturedSectionProps {
 }
 
 export default function FeaturedSection({ items }: FeaturedSectionProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   if (items.length === 0) return null;
 
@@ -41,13 +41,13 @@ export default function FeaturedSection({ items }: FeaturedSectionProps) {
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
-                      alt={item.name}
+                      alt={getLocalizedName(item, locale)}
                       fill
                       className="object-cover"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                   ) : (
-                    <PlaceholderImage categoryName={item.categories?.name} />
+                    <PlaceholderImage categoryName={item.categories?.name_uz} />
                   )}
                   {/* Bottom gradient for depth */}
                   <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/10 to-transparent" />
@@ -59,13 +59,13 @@ export default function FeaturedSection({ items }: FeaturedSectionProps) {
                 </div>
                 <div className="p-5">
                   <p className="text-[11px] text-text-secondary uppercase tracking-wider mb-1 font-medium">
-                    {item.categories?.name}
+                    {item.categories ? getLocalizedName(item.categories, locale) : ''}
                   </p>
                   <h3 className="font-display text-lg font-semibold text-brown-deep mb-1.5">
-                    {item.name}
+                    {getLocalizedName(item, locale)}
                   </h3>
                   <p className="text-text-secondary text-sm line-clamp-2 mb-3 leading-relaxed">
-                    {item.description}
+                    {getLocalizedDescription(item, locale)}
                   </p>
                   <p className="font-display text-xl font-bold text-brown-deep">
                     {formatPrice(item.price)}

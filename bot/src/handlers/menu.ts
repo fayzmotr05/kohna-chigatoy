@@ -55,7 +55,7 @@ export function registerMenuHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     categories.forEach((cat, i) => {
-      keyboard.text(`${cat.icon || ''} ${cat.name}`, `cat_${cat.id}`);
+      keyboard.text(`${cat.icon || ''} ${cat.name_uz}`, `cat_${cat.id}`);
       if (i % 2 === 1) keyboard.row();
     });
     keyboard.row().text('🏠 Bosh menyu', 'go_home');
@@ -147,7 +147,7 @@ export function registerMenuHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     categories.forEach((cat, i) => {
-      keyboard.text(`${cat.icon || ''} ${cat.name}`, `cat_${cat.id}`);
+      keyboard.text(`${cat.icon || ''} ${cat.name_uz}`, `cat_${cat.id}`);
       if (i % 2 === 1) keyboard.row();
     });
     keyboard.row().text('🏠 Bosh menyu', 'go_home');
@@ -165,10 +165,10 @@ export function registerMenuHandlers(bot: Bot) {
 
     const { data: items } = await supabase
       .from('menu_items')
-      .select('id, name, price')
+      .select('id, name_uz, price')
       .eq('category_id', categoryId)
       .eq('is_available', true)
-      .order('name');
+      .order('name_uz');
 
     if (!items?.length) {
       const kb = new InlineKeyboard()
@@ -180,7 +180,7 @@ export function registerMenuHandlers(bot: Bot) {
     const keyboard = new InlineKeyboard();
     items.forEach((item) => {
       const price = formatPrice(item.price);
-      keyboard.text(`${item.name} — ${price}`, `item_${item.id}`).row();
+      keyboard.text(`${item.name_uz} — ${price}`, `item_${item.id}`).row();
     });
     keyboard.text('⬅️ Orqaga', 'menu_main').text('🏠 Bosh menyu', 'go_home');
 
@@ -196,7 +196,7 @@ export function registerMenuHandlers(bot: Bot) {
 
     const { data: item } = await supabase
       .from('menu_items')
-      .select('*, categories(name)')
+      .select('*, categories(name_uz)')
       .eq('id', itemId)
       .single();
 
@@ -207,8 +207,8 @@ export function registerMenuHandlers(bot: Bot) {
 
     const price = formatPrice(item.price);
     const text =
-      `*${item.name}*\n\n` +
-      `${item.description}\n\n` +
+      `*${item.name_uz}*\n\n` +
+      `${item.description_uz}\n\n` +
       `💰 *${price} UZS*` +
       (item.is_featured ? '\n⭐ Tavsiya etiladi' : '');
 

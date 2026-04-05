@@ -26,7 +26,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Not registered' }, { status: 403 });
   }
 
-  const body = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
   const { items } = body;
 
   if (!Array.isArray(items) || items.length === 0) {
@@ -37,7 +42,7 @@ export async function POST(request: Request) {
   const itemIds = items.map((i: { id: string }) => i.id);
   const { data: dbItems } = await supabase
     .from('menu_items')
-    .select('id, name, price, is_available')
+    .select('id, name_uz, price, is_available')
     .in('id', itemIds);
 
   if (!dbItems) {
@@ -48,7 +53,7 @@ export async function POST(request: Request) {
   const unavailable = dbItems.filter((i) => !i.is_available);
   if (unavailable.length > 0) {
     return NextResponse.json({
-      error: `Unavailable: ${unavailable.map((i) => i.name).join(', ')}`,
+      error: `Unavailable: ${unavailable.map((i) => i.name_uz).join(', ')}`,
     }, { status: 400 });
   }
 
@@ -60,7 +65,7 @@ export async function POST(request: Request) {
       if (!dbItem) return null;
       return {
         id: dbItem.id,
-        name: dbItem.name,
+        name: dbItem.name_uz,
         price: Number(dbItem.price),
         qty: i.quantity,
       };

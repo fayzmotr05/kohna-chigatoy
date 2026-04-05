@@ -25,6 +25,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'ADD_ITEM': {
       const existing = state.items.find((i) => i.id === action.payload.id);
       if (existing) {
+        if (existing.quantity >= 99) return state;
         return {
           items: state.items.map((i) =>
             i.id === action.payload.id ? { ...i, quantity: i.quantity + 1 } : i,
@@ -41,9 +42,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       if (action.payload.quantity <= 0) {
         return { items: state.items.filter((i) => i.id !== action.payload.id) };
       }
+      const clampedQty = Math.min(action.payload.quantity, 99);
       return {
         items: state.items.map((i) =>
-          i.id === action.payload.id ? { ...i, quantity: action.payload.quantity } : i,
+          i.id === action.payload.id ? { ...i, quantity: clampedQty } : i,
         ),
       };
     }

@@ -1,6 +1,8 @@
 export interface Category {
   id: string;
-  name: string;
+  name_uz: string;
+  name_ru: string | null;
+  name_en: string | null;
   display_order: number;
   icon: string | null;
   created_at: string;
@@ -9,8 +11,12 @@ export interface Category {
 export interface MenuItem {
   id: string;
   category_id: string | null;
-  name: string;
-  description: string;
+  name_uz: string;
+  name_ru: string | null;
+  name_en: string | null;
+  description_uz: string;
+  description_ru: string | null;
+  description_en: string | null;
   price: number;
   image_url: string | null;
   model_usdz_url: string | null;

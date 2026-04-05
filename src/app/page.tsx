@@ -14,7 +14,7 @@ async function getFeaturedItems(): Promise<MenuItem[]> {
     const supabase = createServerClient();
     const { data, error } = await supabase
       .from('menu_items')
-      .select('*, categories(name)')
+      .select('*, categories(name_uz, name_ru, name_en)')
       .eq('is_featured', true)
       .eq('is_available', true)
       .limit(6);

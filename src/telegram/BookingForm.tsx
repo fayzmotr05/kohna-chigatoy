@@ -60,8 +60,12 @@ export default function BookingForm({ onClose, onNeedRegistration }: BookingForm
         setSuccess(true);
         webApp?.HapticFeedback.notificationOccurred('success');
       } else {
-        const data = await res.json();
-        setError(data.error || t.telegram.bookError);
+        try {
+          const data = await res.json();
+          setError(data.error || t.telegram.bookError);
+        } catch {
+          setError(t.telegram.bookError);
+        }
         webApp?.HapticFeedback.notificationOccurred('error');
       }
     } catch {

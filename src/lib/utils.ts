@@ -37,3 +37,29 @@ export function getStorageUrl(path: string): string {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   return `${supabaseUrl}/storage/v1/object/public/media/${path}`;
 }
+
+/**
+ * Get localized name for a category or menu item.
+ * Falls back to Uzbek if the target locale is empty.
+ */
+export function getLocalizedName(
+  item: { name_uz: string; name_ru?: string | null; name_en?: string | null },
+  locale: string,
+): string {
+  if (locale === 'ru' && item.name_ru) return item.name_ru;
+  if (locale === 'en' && item.name_en) return item.name_en;
+  return item.name_uz;
+}
+
+/**
+ * Get localized description for a menu item.
+ * Falls back to Uzbek if the target locale is empty.
+ */
+export function getLocalizedDescription(
+  item: { description_uz: string; description_ru?: string | null; description_en?: string | null },
+  locale: string,
+): string {
+  if (locale === 'ru' && item.description_ru) return item.description_ru;
+  if (locale === 'en' && item.description_en) return item.description_en;
+  return item.description_uz;
+}

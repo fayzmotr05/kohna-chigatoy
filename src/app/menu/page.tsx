@@ -13,9 +13,9 @@ async function getMenuData() {
       supabase.from('categories').select('*').order('display_order'),
       supabase
         .from('menu_items')
-        .select('*, categories(name)')
+        .select('*, categories(name_uz, name_ru, name_en)')
         .eq('is_available', true)
-        .order('name'),
+        .order('name_uz'),
     ]);
     if (categoriesRes.error) throw categoriesRes.error;
     return {

@@ -104,7 +104,7 @@ export function registerOrderHandlers(bot: Bot) {
 
     const keyboard = new InlineKeyboard();
     categories.forEach((cat: any, i: number) => {
-      keyboard.text(`${cat.icon || ''} ${cat.name}`, `ocat_${cat.id}`);
+      keyboard.text(`${cat.icon || ''} ${cat.name_uz}`, `ocat_${cat.id}`);
       if (i % 2 === 1) keyboard.row();
     });
     if (categories.length % 2 === 1) keyboard.row();
@@ -136,10 +136,10 @@ export function registerOrderHandlers(bot: Bot) {
 
     const { data: items } = await supabase
       .from('menu_items')
-      .select('id, name, price')
+      .select('id, name_uz, price')
       .eq('category_id', categoryId)
       .eq('is_available', true)
-      .order('name');
+      .order('name_uz');
 
     if (!items?.length) {
       const kb = new InlineKeyboard()
@@ -151,7 +151,7 @@ export function registerOrderHandlers(bot: Bot) {
     const keyboard = new InlineKeyboard();
     items.forEach((item) => {
       keyboard
-        .text(`${item.name} (${formatPrice(item.price)})`, `oadd_${item.id}`)
+        .text(`${item.name_uz} (${formatPrice(item.price)})`, `oadd_${item.id}`)
         .row();
     });
     keyboard.text('⬅️ Orqaga', 'order_categories');
@@ -176,11 +176,11 @@ export function registerOrderHandlers(bot: Bot) {
     } else {
       const { data: item } = await supabase
         .from('menu_items')
-        .select('id, name, price')
+        .select('id, name_uz, price')
         .eq('id', itemId)
         .single();
       if (!item) return;
-      cart.items.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
+      cart.items.push({ id: item.id, name: item.name_uz, price: item.price, qty: 1 });
     }
 
     const keyboard = new InlineKeyboard()

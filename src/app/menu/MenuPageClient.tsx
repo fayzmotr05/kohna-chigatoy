@@ -6,7 +6,7 @@ import {
   Search, Grid3X3, List, Layers, Star, Box, SearchX, ShoppingBag, Plus,
 } from 'lucide-react';
 import type { Category, MenuItem } from '@/lib/types';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getLocalizedName, getLocalizedDescription } from '@/lib/utils';
 import { useTranslation } from '@/i18n/LanguageContext';
 import MenuCard from '@/components/MenuCard';
 import PlaceholderImage from '@/components/PlaceholderImage';
@@ -34,7 +34,7 @@ export default function MenuPageClient({ categories, items }: Props) {
   const [showBooking, setShowBooking] = useState(false);
   const [pendingAction, setPendingAction] = useState<'checkout' | 'booking' | null>(null);
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { isTelegram, isRegistered, webApp } = useTelegram();
   const { itemCount, total, addItem } = useCart();
 
@@ -45,9 +45,9 @@ export default function MenuPageClient({ categories, items }: Props) {
       setShowRegistration(true);
       return;
     }
-    addItem({ id: item.id, name: item.name, price: item.price });
+    addItem({ id: item.id, name: getLocalizedName(item, locale), price: item.price });
     webApp?.HapticFeedback.impactOccurred('light');
-  }, [isRegistered, addItem, webApp]);
+  }, [isRegistered, addItem, webApp, locale]);
 
   // After registration, complete the pending action
   const handleRegistered = useCallback(() => {
@@ -89,13 +89,16 @@ export default function MenuPageClient({ categories, items }: Props) {
     }
   }, [webApp, isTelegram, itemCount, total, t.telegram.cart]);
 
-  // Filter items by search
+  // Filter items by search (search across all locale fields)
   const filtered = search
-    ? items.filter(
-        (i) =>
-          i.name.toLowerCase().includes(search.toLowerCase()) ||
-          i.description.toLowerCase().includes(search.toLowerCase()),
-      )
+    ? items.filter((i) => {
+        const q = search.toLowerCase();
+        return (
+          getLocalizedName(i, locale).toLowerCase().includes(q) ||
+          getLocalizedDescription(i, locale).toLowerCase().includes(q) ||
+          i.name_uz.toLowerCase().includes(q)
+        );
+      })
     : items;
 
   // Group items by category
@@ -301,7 +304,7 @@ export default function MenuPageClient({ categories, items }: Props) {
                     : 'text-text-secondary hover:text-brown-deep hover:bg-sand-light/50'
                 }`}
               >
-                {cat.name}
+                {getLocalizedName(cat, locale)}
               </button>
             ))}
           </div>
@@ -343,7 +346,7 @@ export default function MenuPageClient({ categories, items }: Props) {
                 {/* Category header */}
                 <div className="flex items-center gap-3 mb-6">
                   <h2 className="font-display text-2xl font-bold text-brown-deep">
-                    {category.name}
+                    {getLocalizedName(category, locale)}
                   </h2>
                   <div className="flex-1 h-px bg-gradient-to-r from-brown-light/20 to-transparent" />
                 </div>
@@ -358,13 +361,13 @@ export default function MenuPageClient({ categories, items }: Props) {
                             {featured.image_url ? (
                               <Image
                                 src={featured.image_url}
-                                alt={featured.name}
+                                alt={getLocalizedName(featured, locale)}
                                 fill
                                 className="object-contain"
                                 sizes="(max-width: 768px) 100vw, 50vw"
                               />
                             ) : (
-                              <PlaceholderImage categoryName={featured.categories?.name} />
+                              <PlaceholderImage categoryName={featured.categories?.name_uz} />
                             )}
                             <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/10 to-transparent" />
                             <div className="absolute top-3 left-3 flex gap-1.5">
@@ -382,10 +385,10 @@ export default function MenuPageClient({ categories, items }: Props) {
                           </div>
                           <div className="p-6 flex flex-col justify-center">
                             <h3 className="font-display text-2xl font-bold text-brown-deep mb-2">
-                              {featured.name}
+                              {getLocalizedName(featured, locale)}
                             </h3>
                             <p className="text-text-secondary leading-relaxed mb-4">
-                              {featured.description}
+                              {getLocalizedDescription(featured, locale)}
                             </p>
                             <div className="flex items-center justify-between gap-2">
                               <p className="font-display text-2xl font-bold text-brown-deep">
@@ -437,23 +440,23 @@ export default function MenuPageClient({ categories, items }: Props) {
                         {/* Mini thumbnail */}
                         <div className="relative w-10 h-10 rounded overflow-hidden shrink-0">
                           {item.image_url ? (
-                            <Image src={item.image_url} alt={item.name} fill className="object-cover" sizes="40px" />
+                            <Image src={item.image_url} alt={getLocalizedName(item, locale)} fill className="object-cover" sizes="40px" />
                           ) : (
-                            <PlaceholderImage categoryName={item.categories?.name} />
+                            <PlaceholderImage categoryName={item.categories?.name_uz} />
                           )}
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h3 className="font-display font-semibold text-brown-deep truncate">
-                              {item.name}
+                              {getLocalizedName(item, locale)}
                             </h3>
                             {item.is_featured && (
                               <Star size={13} fill="var(--color-tan)" className="text-tan shrink-0" />
                             )}
                           </div>
                           <p className="text-text-secondary text-sm truncate">
-                            {item.description}
+                            {getLocalizedDescription(item, locale)}
                           </p>
                         </div>
 
