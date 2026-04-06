@@ -84,10 +84,10 @@ export function registerAdminHandlers(bot: Bot) {
   bot.callbackQuery('a_add', async (ctx) => {
     if (!isAdmin(ctx)) return ctx.answerCallbackQuery('⛔️');
     await ctx.answerCallbackQuery();
-    sessions.set(ctx.chat!.id, { action: 'add', step: 'name', data: {} });
+    sessions.set(ctx.chat!.id, { action: 'add', step: 'name_uz', data: {} });
     const kb = new InlineKeyboard().text('❌ Bekor qilish', 'admin_panel');
     await ctx.editMessageText(
-      '📝 *Yangi taom qo\'shish* (1/7)\n\n✏️ Taom nomini yozing:',
+      '📝 *Yangi taom* (1/11)\n\n🇺🇿 Taom nomini yozing (o\'zbekcha):',
       { parse_mode: 'Markdown', reply_markup: kb },
     );
   });
@@ -95,12 +95,73 @@ export function registerAdminHandlers(bot: Bot) {
   // Also support /add command
   bot.command('add', async (ctx) => {
     if (!isAdmin(ctx)) return;
-    sessions.set(ctx.chat.id, { action: 'add', step: 'name', data: {} });
+    sessions.set(ctx.chat.id, { action: 'add', step: 'name_uz', data: {} });
     const kb = new InlineKeyboard().text('❌ Bekor qilish', 'admin_panel');
-    await ctx.reply('📝 *Yangi taom qo\'shish* (1/7)\n\n✏️ Taom nomini yozing:', {
+    await ctx.reply('📝 *Yangi taom* (1/11)\n\n🇺🇿 Taom nomini yozing (o\'zbekcha):', {
       parse_mode: 'Markdown',
       reply_markup: kb,
     });
+  });
+
+  // Skip translation callbacks
+  bot.callbackQuery('aa_skip_name_ru', async (ctx) => {
+    if (!isAdmin(ctx)) return ctx.answerCallbackQuery();
+    await ctx.answerCallbackQuery();
+    const session = sessions.get(ctx.chat!.id);
+    if (!session) return;
+    session.data.nameRu = null;
+    session.step = 'name_en';
+    const kb = new InlineKeyboard()
+      .text('⏩ O\'tkazish', 'aa_skip_name_en')
+      .text('❌ Bekor qilish', 'admin_panel');
+    await ctx.editMessageText(
+      `📝 *Yangi taom* (3/11)\n\n🇬🇧 English name:\n\n_O'tkazilsa "${session.data.name}" ishlatiladi_`,
+      { parse_mode: 'Markdown', reply_markup: kb },
+    );
+  });
+
+  bot.callbackQuery('aa_skip_name_en', async (ctx) => {
+    if (!isAdmin(ctx)) return ctx.answerCallbackQuery();
+    await ctx.answerCallbackQuery();
+    const session = sessions.get(ctx.chat!.id);
+    if (!session) return;
+    session.data.nameEn = null;
+    session.step = 'desc_uz';
+    const kb = new InlineKeyboard().text('❌ Bekor qilish', 'admin_panel');
+    await ctx.editMessageText(
+      '📝 *Yangi taom* (4/11)\n\n🇺🇿 Tavsifini yozing (o\'zbekcha):',
+      { parse_mode: 'Markdown', reply_markup: kb },
+    );
+  });
+
+  bot.callbackQuery('aa_skip_desc_ru', async (ctx) => {
+    if (!isAdmin(ctx)) return ctx.answerCallbackQuery();
+    await ctx.answerCallbackQuery();
+    const session = sessions.get(ctx.chat!.id);
+    if (!session) return;
+    session.data.descRu = null;
+    session.step = 'desc_en';
+    const kb = new InlineKeyboard()
+      .text('⏩ O\'tkazish', 'aa_skip_desc_en')
+      .text('❌ Bekor qilish', 'admin_panel');
+    await ctx.editMessageText(
+      `📝 *Yangi taom* (6/11)\n\n🇬🇧 English description:\n\n_O'tkazilsa o'zbekcha ishlatiladi_`,
+      { parse_mode: 'Markdown', reply_markup: kb },
+    );
+  });
+
+  bot.callbackQuery('aa_skip_desc_en', async (ctx) => {
+    if (!isAdmin(ctx)) return ctx.answerCallbackQuery();
+    await ctx.answerCallbackQuery();
+    const session = sessions.get(ctx.chat!.id);
+    if (!session) return;
+    session.data.descEn = null;
+    session.step = 'price';
+    const kb = new InlineKeyboard().text('❌ Bekor qilish', 'admin_panel');
+    await ctx.editMessageText(
+      '📝 *Yangi taom* (7/11)\n\n💰 Narxini yozing (UZS, faqat raqam):',
+      { parse_mode: 'Markdown', reply_markup: kb },
+    );
   });
 
   // Add item — pick category callback
@@ -115,7 +176,7 @@ export function registerAdminHandlers(bot: Bot) {
       .text('⏩ O\'tkazish', 'aa_skip_photo')
       .text('❌ Bekor qilish', 'admin_panel');
     await ctx.editMessageText(
-      '📝 *Yangi taom* (5/7)\n\n📷 Taom rasmini yuboring yoki o\'tkazing:',
+      '📝 *Yangi taom* (9/11)\n\n📷 Taom rasmini yuboring yoki o\'tkazing:',
       { parse_mode: 'Markdown', reply_markup: kb },
     );
   });
@@ -130,7 +191,7 @@ export function registerAdminHandlers(bot: Bot) {
       .text('⏩ O\'tkazish', 'aa_skip_model')
       .text('❌ Bekor qilish', 'admin_panel');
     await ctx.editMessageText(
-      '📝 *Yangi taom* (6/7)\n\n🔮 3D fayl yuboring (.glb / .usdz) yoki o\'tkazing:',
+      '📝 *Yangi taom* (10/11)\n\n🔮 3D fayl yuboring (.glb / .usdz) yoki o\'tkazing:',
       { parse_mode: 'Markdown', reply_markup: kb },
     );
   });
@@ -145,7 +206,7 @@ export function registerAdminHandlers(bot: Bot) {
       .text('Ha ⭐', 'aafeat_true')
       .text('Yo\'q', 'aafeat_false');
     await ctx.editMessageText(
-      '📝 *Yangi taom* (7/7)\n\n⭐ Tavsiya etiladimi?',
+      '📝 *Yangi taom* (11/11)\n\n⭐ Tavsiya etiladimi?',
       { parse_mode: 'Markdown', reply_markup: kb },
     );
   });
@@ -160,7 +221,7 @@ export function registerAdminHandlers(bot: Bot) {
     const kb = new InlineKeyboard()
       .text('Ha ⭐', 'aafeat_true')
       .text('Yo\'q', 'aafeat_false');
-    await ctx.reply('📝 *Yangi taom* (7/7)\n\n⭐ Tavsiya etiladimi?', {
+    await ctx.reply('📝 *Yangi taom* (11/11)\n\n⭐ Tavsiya etiladimi?', {
       parse_mode: 'Markdown',
       reply_markup: kb,
     });
@@ -178,7 +239,11 @@ export function registerAdminHandlers(bot: Bot) {
 
     const { error } = await supabase.from('menu_items').insert({
       name_uz: session.data.name,
+      name_ru: session.data.nameRu || null,
+      name_en: session.data.nameEn || null,
       description_uz: session.data.description || '',
+      description_ru: session.data.descRu || null,
+      description_en: session.data.descEn || null,
       price: session.data.price,
       category_id: session.data.categoryId,
       image_url: session.data.imageUrl || null,
@@ -784,21 +849,69 @@ export function registerAdminHandlers(bot: Bot) {
 
     // ─── Add menu item flow ───
     if (session.action === 'add') {
-      if (session.step === 'name') {
+      if (session.step === 'name_uz') {
         session.data.name = text;
-        session.step = 'description';
+        session.step = 'name_ru';
+        const kb = new InlineKeyboard()
+          .text('⏩ O\'tkazish', 'aa_skip_name_ru')
+          .text('❌ Bekor qilish', 'admin_panel');
+        await ctx.reply(
+          `📝 *Yangi taom* (2/11)\n\n🇷🇺 Ruscha nomini yozing:\n\n_O'tkazilsa "${text}" ishlatiladi_`,
+          { parse_mode: 'Markdown', reply_markup: kb },
+        );
+        return;
+      }
+      if (session.step === 'name_ru') {
+        session.data.nameRu = text;
+        session.step = 'name_en';
+        const kb = new InlineKeyboard()
+          .text('⏩ O\'tkazish', 'aa_skip_name_en')
+          .text('❌ Bekor qilish', 'admin_panel');
+        await ctx.reply(
+          `📝 *Yangi taom* (3/11)\n\n🇬🇧 English name:\n\n_O'tkazilsa "${session.data.name}" ishlatiladi_`,
+          { parse_mode: 'Markdown', reply_markup: kb },
+        );
+        return;
+      }
+      if (session.step === 'name_en') {
+        session.data.nameEn = text;
+        session.step = 'desc_uz';
         const kb = new InlineKeyboard().text('❌ Bekor qilish', 'admin_panel');
-        await ctx.reply('📝 *Yangi taom* (2/7)\n\n📄 Tavsifini yozing:', {
+        await ctx.reply('📝 *Yangi taom* (4/11)\n\n🇺🇿 Tavsifini yozing (o\'zbekcha):', {
           parse_mode: 'Markdown',
           reply_markup: kb,
         });
         return;
       }
-      if (session.step === 'description') {
+      if (session.step === 'desc_uz') {
         session.data.description = text;
+        session.step = 'desc_ru';
+        const kb = new InlineKeyboard()
+          .text('⏩ O\'tkazish', 'aa_skip_desc_ru')
+          .text('❌ Bekor qilish', 'admin_panel');
+        await ctx.reply(
+          `📝 *Yangi taom* (5/11)\n\n🇷🇺 Ruscha tavsif:\n\n_O'tkazilsa o'zbekcha ishlatiladi_`,
+          { parse_mode: 'Markdown', reply_markup: kb },
+        );
+        return;
+      }
+      if (session.step === 'desc_ru') {
+        session.data.descRu = text;
+        session.step = 'desc_en';
+        const kb = new InlineKeyboard()
+          .text('⏩ O\'tkazish', 'aa_skip_desc_en')
+          .text('❌ Bekor qilish', 'admin_panel');
+        await ctx.reply(
+          `📝 *Yangi taom* (6/11)\n\n🇬🇧 English description:\n\n_O'tkazilsa o'zbekcha ishlatiladi_`,
+          { parse_mode: 'Markdown', reply_markup: kb },
+        );
+        return;
+      }
+      if (session.step === 'desc_en') {
+        session.data.descEn = text;
         session.step = 'price';
         const kb = new InlineKeyboard().text('❌ Bekor qilish', 'admin_panel');
-        await ctx.reply('📝 *Yangi taom* (3/7)\n\n💰 Narxini yozing (UZS, faqat raqam):', {
+        await ctx.reply('📝 *Yangi taom* (7/11)\n\n💰 Narxini yozing (UZS, faqat raqam):', {
           parse_mode: 'Markdown',
           reply_markup: kb,
         });
@@ -821,7 +934,7 @@ export function registerAdminHandlers(bot: Bot) {
         });
         if ((cats?.length || 0) % 2 === 1) keyboard.row();
         keyboard.text('❌ Bekor qilish', 'admin_panel');
-        await ctx.reply('📝 *Yangi taom* (4/7)\n\n📁 Kategoriyani tanlang:', {
+        await ctx.reply('📝 *Yangi taom* (8/11)\n\n📁 Kategoriyani tanlang:', {
           parse_mode: 'Markdown',
           reply_markup: keyboard,
         });
@@ -923,7 +1036,7 @@ export function registerAdminHandlers(bot: Bot) {
     const kb = new InlineKeyboard()
       .text('⏩ O\'tkazish', 'aa_skip_model')
       .text('❌ Bekor qilish', 'admin_panel');
-    await ctx.reply('📝 *Yangi taom* (6/7)\n\n🔮 3D fayl yuboring (.glb / .usdz) yoki o\'tkazing:', {
+    await ctx.reply('📝 *Yangi taom* (10/11)\n\n🔮 3D fayl yuboring (.glb / .usdz) yoki o\'tkazing:', {
       parse_mode: 'Markdown',
       reply_markup: kb,
     });
