@@ -82,12 +82,14 @@ export default function Navbar() {
               {t.nav.location}
             </Link>
             <LanguageSwitcher />
-            <Link
-              href="/menu"
+            <a
+              href="https://t.me/kohna_chigatoy_bot?start=book"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-brown-deep text-cream px-5 py-2 rounded text-sm font-semibold hover:bg-brown hover:shadow-[0_4px_20px_rgba(109,53,32,0.3)] transition-all duration-200"
             >
               {t.nav.booking}
-            </Link>
+            </a>
           </div>
 
           {/* Mobile hamburger */}
@@ -127,14 +129,16 @@ export default function Navbar() {
           <div className="flex items-center justify-between mt-3 mb-3 px-1">
             <LanguageSwitcher />
           </div>
-          <Link
-            href="/menu"
+          <a
+            href="https://t.me/kohna_chigatoy_bot?start=book"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 bg-brown-deep text-cream px-5 py-2.5 rounded font-semibold hover:bg-brown transition-colors"
             onClick={() => setMobileOpen(false)}
           >
             <CalendarCheck size={16} />
             {t.nav.booking}
-          </Link>
+          </a>
         </div>
       </div>
 

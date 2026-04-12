@@ -33,8 +33,23 @@ export function registerMenuHandlers(bot: Bot) {
     { command: 'cancel', description: 'Bekor qilish' },
   ]).catch(() => {});
 
-  // ─── /start — Main menu ───
+  // ─── /start — Main menu (with deep link support) ───
   bot.command('start', async (ctx) => {
+    const param = ctx.match?.trim();
+
+    // Deep link: t.me/bot?start=book → open Mini App booking
+    if (param === 'book') {
+      const kb = new InlineKeyboard()
+        .webApp('📅 Band qilish', `${siteUrl()}/menu?action=book`)
+        .row()
+        .text('🏠 Bosh menyu', 'go_home');
+      await ctx.reply('📅 *Stol band qilish*\n\nQuyidagi tugmani bosing:', {
+        parse_mode: 'Markdown',
+        reply_markup: kb,
+      });
+      return;
+    }
+
     const kb = mainMenuKeyboard(siteUrl(), isAdmin(ctx));
     await ctx.reply(
       '🏠 *Ko\'hna Chig\'atoy*\nOilaviy restoranga xush kelibsiz!\n\nQuyidagidan tanlang:',
