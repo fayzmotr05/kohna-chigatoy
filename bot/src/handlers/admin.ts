@@ -1100,13 +1100,16 @@ export function registerAdminHandlers(bot: Bot) {
           const outputPath = join(tmpDir, `${ts}.glb`);
           writeFileSync(inputPath, buffer);
 
-          // Try Python conversion (longer timeout for large files)
+          // Run Blender headless to convert USDZ → GLB
           const scriptPath = join(__dirname, '..', '..', 'scripts', 'convert_usdz.py');
-          const result = execSync(`python3 "${scriptPath}" "${inputPath}" "${outputPath}"`, {
-            timeout: 180000,
-            stdio: ['pipe', 'pipe', 'pipe'],
-          });
-          console.log('Conversion output:', result.toString());
+          const result = execSync(
+            `blender --background --python "${scriptPath}" -- "${inputPath}" "${outputPath}"`,
+            {
+              timeout: 180000,
+              stdio: ['pipe', 'pipe', 'pipe'],
+            },
+          );
+          console.log('Conversion output:', result.toString().slice(-500));
 
           let glbBuffer = readFileSync(outputPath);
 
@@ -1141,12 +1144,12 @@ export function registerAdminHandlers(bot: Bot) {
           try { unlinkSync(inputPath); } catch {}
           try { unlinkSync(outputPath); } catch {}
         } catch (err: any) {
-          const stderr = err?.stderr?.toString?.() || err?.message || String(err);
+          const stderr = (err?.stderr?.toString?.() || err?.message || String(err)).slice(-500);
           console.error('USDZ→GLB conversion failed:', stderr);
           await ctx.reply(
             '⚠️ Avtomatik konvertatsiya ishlamadi.\n' +
-            `.glb faylni ham yuboring.\n\n` +
-            `_Xato: ${stderr.slice(0, 200)}_`,
+            'Iltimos, .glb faylni alohida yuboring (Android uchun kerak).\n\n' +
+            `_${stderr.slice(0, 200)}_`,
             { parse_mode: 'Markdown' },
           );
         }

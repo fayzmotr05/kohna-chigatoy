@@ -1,117 +1,71 @@
 #!/usr/bin/env python3
 """
-Convert USDZ to GLB.
-USDZ is a zip archive containing USD scene + textures.
-Uses trimesh to load and export to GLB with multiple fallback strategies.
+USDZ → GLB converter using Blender headless.
+Blender 4.x has mature USD/USDZ import support and reliable glTF export.
+
+Usage: blender --background --python convert_usdz.py -- input.usdz output.glb
 """
+import bpy
 import sys
 import os
-import zipfile
-import tempfile
-import traceback
-
-try:
-    import trimesh
-except ImportError:
-    print("ERROR: trimesh not installed. Run: pip3 install trimesh numpy pygltflib", file=sys.stderr)
-    sys.exit(1)
 
 
-MESH_EXTENSIONS = (
-    ".usda", ".usdc", ".usd",
-    ".obj", ".stl", ".ply",
-    ".glb", ".gltf",
-    ".dae", ".fbx",
-)
+def main():
+    # Args after the "--" separator (everything before is Blender's own args)
+    if "--" not in sys.argv:
+        print("ERROR: Missing -- separator. Use: blender --background --python convert_usdz.py -- in.usdz out.glb", file=sys.stderr)
+        sys.exit(1)
 
+    argv = sys.argv[sys.argv.index("--") + 1:]
+    if len(argv) != 2:
+        print("ERROR: Need exactly 2 args (input, output)", file=sys.stderr)
+        sys.exit(1)
 
-def convert(input_path: str, output_path: str) -> None:
-    ext = os.path.splitext(input_path)[1].lower()
+    input_path, output_path = argv
 
-    if ext == ".usdz":
-        # Strategy 1: Direct load as scene
-        try:
-            scene = trimesh.load(input_path, force="scene")
-            if scene is not None and hasattr(scene, 'export'):
-                scene.export(output_path, file_type="glb")
-                if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-                    return
-        except Exception as e:
-            print(f"Strategy 1 (direct scene) failed: {e}", file=sys.stderr)
+    if not os.path.exists(input_path):
+        print(f"ERROR: Input file not found: {input_path}", file=sys.stderr)
+        sys.exit(1)
 
-        # Strategy 2: Direct load as mesh
-        try:
-            mesh = trimesh.load(input_path, force="mesh")
-            if mesh is not None and hasattr(mesh, 'export'):
-                mesh.export(output_path, file_type="glb")
-                if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-                    return
-        except Exception as e:
-            print(f"Strategy 2 (direct mesh) failed: {e}", file=sys.stderr)
+    # Reset Blender to a clean empty scene
+    bpy.ops.wm.read_factory_settings(use_empty=True)
 
-        # Strategy 3: Extract zip and try each mesh file inside
-        try:
-            with tempfile.TemporaryDirectory() as tmp:
-                with zipfile.ZipFile(input_path, "r") as z:
-                    z.extractall(tmp)
+    # Import USD/USDZ (Blender 4.x supports both natively)
+    try:
+        bpy.ops.wm.usd_import(filepath=input_path)
+    except Exception as e:
+        print(f"ERROR: USD import failed: {e}", file=sys.stderr)
+        sys.exit(1)
 
-                mesh_files = []
-                for root, _dirs, files in os.walk(tmp):
-                    for f in files:
-                        if f.lower().endswith(MESH_EXTENSIONS):
-                            mesh_files.append(os.path.join(root, f))
+    # Verify something was imported
+    mesh_objects = [obj for obj in bpy.context.scene.objects if obj.type in ('MESH', 'EMPTY')]
+    if not mesh_objects:
+        print("ERROR: No mesh objects found after USD import", file=sys.stderr)
+        sys.exit(1)
 
-                if not mesh_files:
-                    raise ValueError(f"No mesh files found in USDZ archive: {input_path}")
+    # Export to GLB
+    try:
+        bpy.ops.export_scene.gltf(
+            filepath=output_path,
+            export_format='GLB',
+            export_apply=True,           # Apply modifiers
+            export_yup=True,             # Y-up axis (glTF standard)
+            export_image_format='AUTO',  # Keep texture formats
+            export_materials='EXPORT',
+            export_cameras=False,
+            export_lights=False,
+        )
+    except Exception as e:
+        print(f"ERROR: GLB export failed: {e}", file=sys.stderr)
+        sys.exit(1)
 
-                errors = []
-                for mf in mesh_files:
-                    # Try as scene first, then as mesh
-                    for force_type in ("scene", "mesh"):
-                        try:
-                            obj = trimesh.load(mf, force=force_type)
-                            if obj is not None and hasattr(obj, 'export'):
-                                obj.export(output_path, file_type="glb")
-                                if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-                                    return
-                        except Exception as e:
-                            errors.append(f"{os.path.basename(mf)} ({force_type}): {e}")
+    if not os.path.exists(output_path):
+        print(f"ERROR: Output file was not created: {output_path}", file=sys.stderr)
+        sys.exit(1)
 
-                raise ValueError(
-                    f"Could not load any mesh from USDZ.\n"
-                    f"Files tried: {[os.path.basename(f) for f in mesh_files]}\n"
-                    f"Errors: {errors}"
-                )
-        except zipfile.BadZipFile:
-            raise ValueError(f"File is not a valid USDZ/ZIP archive: {input_path}")
-
-    else:
-        # Non-USDZ formats: try scene then mesh
-        try:
-            scene = trimesh.load(input_path, force="scene")
-            scene.export(output_path, file_type="glb")
-        except Exception:
-            mesh = trimesh.load(input_path, force="mesh")
-            mesh.export(output_path, file_type="glb")
+    size_kb = os.path.getsize(output_path) / 1024
+    print(f"OK: {output_path} ({size_kb:.0f} KB)")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: convert_usdz.py <input.usdz> <output.glb>", file=sys.stderr)
-        sys.exit(1)
-
-    input_file = sys.argv[1]
-    output_file = sys.argv[2]
-
-    if not os.path.exists(input_file):
-        print(f"ERROR: Input file not found: {input_file}", file=sys.stderr)
-        sys.exit(1)
-
-    try:
-        convert(input_file, output_file)
-        size_kb = os.path.getsize(output_file) / 1024
-        print(f"OK: {output_file} ({size_kb:.0f} KB)")
-    except Exception as e:
-        print(f"ERROR: {e}", file=sys.stderr)
-        traceback.print_exc(file=sys.stderr)
-        sys.exit(1)
+    main()
