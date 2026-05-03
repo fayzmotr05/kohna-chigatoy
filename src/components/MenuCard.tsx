@@ -19,7 +19,19 @@ export default function MenuCard({ item, onAR, onAddToCart }: MenuCardProps) {
   const { t, locale } = useTranslation();
   const { isTelegram } = useTelegram();
   const { addItem } = useCart();
-  const hasAR = item.model_status === 'ready' && (item.model_glb_url || item.model_usdz_url);
+
+  // AR is only useful if the right format exists for the user's device
+  // Android: needs GLB | iOS: prefers USDZ but works with GLB
+  const hasAR = (() => {
+    if (item.model_status !== 'ready') return false;
+    if (typeof navigator === 'undefined') return !!(item.model_glb_url || item.model_usdz_url);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroidDevice = /Android/i.test(navigator.userAgent);
+    if (isIOS) return !!(item.model_usdz_url || item.model_glb_url);
+    if (isAndroidDevice) return !!item.model_glb_url;
+    return !!(item.model_glb_url || item.model_usdz_url);
+  })();
 
   const handleAdd = () => {
     if (onAddToCart) {

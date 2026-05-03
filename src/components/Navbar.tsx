@@ -83,7 +83,7 @@ export default function Navbar() {
             </Link>
             <LanguageSwitcher />
             <a
-              href="https://t.me/kohna_chigatoy_bot?start=book"
+              href="https://t.me/Kohnachigatoybot?start=book"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-brown-deep text-cream px-5 py-2 rounded text-sm font-semibold hover:bg-brown hover:shadow-[0_4px_20px_rgba(109,53,32,0.3)] transition-all duration-200"
@@ -130,7 +130,7 @@ export default function Navbar() {
             <LanguageSwitcher />
           </div>
           <a
-            href="https://t.me/kohna_chigatoy_bot?start=book"
+            href="https://t.me/Kohnachigatoybot?start=book"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 bg-brown-deep text-cream px-5 py-2.5 rounded font-semibold hover:bg-brown transition-colors"

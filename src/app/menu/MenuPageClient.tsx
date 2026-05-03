@@ -151,6 +151,7 @@ export default function MenuPageClient({ categories, items }: Props) {
     const tg = (window as any).Telegram?.WebApp;
 
     if (isIOS && item.model_usdz_url) {
+      // iOS native AR Quick Look (best experience)
       const url = cleanModelUrl(item.model_usdz_url) + '#allowsContentScaling=0';
       if (tg) {
         tg.openLink(url, { try_instant_view: false });
@@ -165,6 +166,7 @@ export default function MenuPageClient({ categories, items }: Props) {
         document.body.removeChild(a);
       }
     } else if (isAndroidDevice && item.model_glb_url) {
+      // Android Scene Viewer (REQUIRES .glb, not .usdz)
       const glbUrl = cleanModelUrl(item.model_glb_url);
       const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_only#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;end;`;
       if (tg) {
@@ -172,22 +174,33 @@ export default function MenuPageClient({ categories, items }: Props) {
       } else {
         window.location.href = intentUrl;
       }
-    } else if (item.model_usdz_url) {
-      const url = cleanModelUrl(item.model_usdz_url);
-      if (tg) {
-        tg.openLink(url, { try_instant_view: false });
-      } else {
-        window.open(url, '_blank');
-      }
     } else if (item.model_glb_url) {
+      // Desktop or fallback: open GLB
       const url = cleanModelUrl(item.model_glb_url);
       if (tg) {
         tg.openLink(url, { try_instant_view: false });
       } else {
         window.open(url, '_blank');
       }
+    } else if (isIOS && item.model_usdz_url) {
+      // iOS only has USDZ (already handled above, kept as safety)
+      const url = cleanModelUrl(item.model_usdz_url);
+      window.open(url, '_blank');
     }
+    // Android with only USDZ: do nothing (no compatible format)
   }, [cleanModelUrl]);
+
+  // Check if AR is available for the current device
+  const hasARForDevice = useCallback((item: MenuItem): boolean => {
+    if (item.model_status !== 'ready') return false;
+    if (typeof navigator === 'undefined') return !!(item.model_glb_url || item.model_usdz_url);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroidDevice = /Android/i.test(navigator.userAgent);
+    if (isIOS) return !!(item.model_usdz_url || item.model_glb_url);
+    if (isAndroidDevice) return !!item.model_glb_url; // Android needs GLB
+    return !!(item.model_glb_url || item.model_usdz_url);
+  }, []);
 
   const handleAR = useCallback((item: MenuItem) => {
     const seen = localStorage.getItem('ar_onboarding_seen');
@@ -395,7 +408,7 @@ export default function MenuPageClient({ categories, items }: Props) {
                                 {formatPrice(featured.price)}
                               </p>
                               <div className="flex items-center gap-2">
-                                {featured.model_status === 'ready' && (featured.model_glb_url || featured.model_usdz_url) && (
+                                {hasARForDevice(featured) && (
                                   <button
                                     onClick={() => handleAR(featured)}
                                     className="bg-brown-deep text-tan px-4 py-2 rounded text-sm font-semibold flex items-center gap-2 hover:bg-brown hover:shadow-[0_4px_20px_rgba(109,53,32,0.3)] transition-all duration-200"
@@ -461,7 +474,7 @@ export default function MenuPageClient({ categories, items }: Props) {
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
-                          {item.model_status === 'ready' && (item.model_glb_url || item.model_usdz_url) && (
+                          {hasARForDevice(item) && (
                             <button
                               onClick={() => handleAR(item)}
                               className="text-brown-deep text-xs font-semibold flex items-center gap-1 hover:text-brown transition-colors"

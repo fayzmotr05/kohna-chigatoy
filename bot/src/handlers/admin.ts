@@ -1208,14 +1208,18 @@ export function registerAdminHandlers(bot: Bot) {
         if (convertedGlbUrl) session.data.modelGlbUrl = convertedGlbUrl;
       }
 
-      const hasGlb = session.data.modelGlbUrl;
+      const hasGlb = !!session.data.modelGlbUrl;
+      const hasUsdz = !!session.data.modelUsdzUrl;
       const kb = new InlineKeyboard()
         .text('Tayyor, davom etish →', 'aamodel_done');
       const extra = convertedGlbUrl ? '\n🔄 GLB avtomatik yaratildi!' : '';
-      const needGlb = !hasGlb ? '\n⚠️ .glb faylni ham yuboring (web uchun kerak).' : '';
+      // Warn about platform compatibility
+      let warning = '';
+      if (!hasGlb) warning += '\n⚠️ *Android telefonlarda AR ishlamaydi* (.glb kerak).';
+      if (!hasUsdz) warning += '\n💡 iOS-da yaxshiroq AR uchun .usdz ham yuborishingiz mumkin.';
       await ctx.reply(
-        `✅ .${ext} yuklandi!${extra}${needGlb}\n\nBoshqa formatni ham yuborishingiz mumkin yoki davom eting:`,
-        { reply_markup: kb },
+        `✅ .${ext} yuklandi!${extra}${warning}\n\nBoshqa formatni ham yuborishingiz mumkin yoki davom eting:`,
+        { parse_mode: 'Markdown', reply_markup: kb },
       );
       return;
     }
