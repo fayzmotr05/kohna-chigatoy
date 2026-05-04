@@ -151,28 +151,33 @@ export default function MenuPageClient({ categories, items }: Props) {
     const tg = (window as any).Telegram?.WebApp;
 
     if (isIOS && item.model_usdz_url) {
-      // iOS native AR Quick Look (best experience)
+      // iOS native AR Quick Look — must be triggered via <a rel="ar"> click, not openLink
       const url = cleanModelUrl(item.model_usdz_url) + '#allowsContentScaling=0';
-      if (tg) {
-        tg.openLink(url, { try_instant_view: false });
-      } else {
-        const a = document.createElement('a');
-        a.rel = 'ar';
-        a.href = url;
-        const img = document.createElement('img');
-        a.appendChild(img);
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
+      const a = document.createElement('a');
+      a.rel = 'ar';
+      a.href = url;
+      const img = document.createElement('img');
+      a.appendChild(img);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } else if (isAndroidDevice && item.model_glb_url) {
       // Android Scene Viewer (REQUIRES .glb, not .usdz)
       const glbUrl = cleanModelUrl(item.model_glb_url);
-      const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_only#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;end;`;
       if (tg) {
-        tg.openLink(intentUrl, { try_instant_view: false });
+        // Telegram's openLink only handles HTTPS — use Scene Viewer's HTTPS URL,
+        // Chrome on Android detects it and launches the AR activity.
+        const sceneViewerUrl = `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_preferred`;
+        tg.openLink(sceneViewerUrl);
       } else {
-        window.location.href = intentUrl;
+        // Regular browser on Android — use intent URL via synthetic anchor click
+        // (window.location.href doesn't always trigger intent handling)
+        const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;end;`;
+        const a = document.createElement('a');
+        a.href = intentUrl;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       }
     } else if (item.model_glb_url) {
       // Desktop or fallback: open GLB
