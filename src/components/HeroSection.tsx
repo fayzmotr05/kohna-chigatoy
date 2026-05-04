@@ -51,7 +51,9 @@ export default function HeroSection() {
               {t.hero.viewMenu}
             </Link>
             <a
-              href="https://t.me/kohnachigatoy"
+              href="https://t.me/Kohnachigatoybot"
+              target="_blank"
+              rel="noopener noreferrer"
               className="border border-brown-light/40 text-brown-light px-8 py-3.5 rounded font-semibold text-base hover:border-tan hover:text-tan transition-all duration-200"
             >
               {t.hero.telegram}

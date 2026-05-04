@@ -1,6 +1,6 @@
 'use client';
 
-import { MapPin, Clock, Phone, Send } from 'lucide-react';
+import { MapPin, Clock, Phone, Send, Truck } from 'lucide-react';
 import ScrollReveal from './ScrollReveal';
 import { useTranslation } from '@/i18n/LanguageContext';
 
@@ -11,6 +11,7 @@ export default function LocationSection() {
     { Icon: MapPin, label: t.location.addressLabel, value: t.location.address },
     { Icon: Clock, label: t.location.hoursLabel, value: t.location.hours },
     { Icon: Phone, label: t.location.phoneLabel, value: t.location.phone },
+    { Icon: Truck, label: t.location.deliveryPhoneLabel, value: t.location.deliveryPhone },
   ];
 
   return (
