@@ -68,7 +68,7 @@ export const uz = {
     deliveryPhone: '+998 88 888 09 09',
     hours: 'Ish vaqti: 10:00 — 23:00',
     telegramBot: 'Telegram',
-    telegramChannel: 'Kanal',
+    telegramContact: 'Admin',
     telegramBotLink: 'Bot',
     instagram: 'Instagram',
     copyright: "Ko'hna Chig'atoy. Barcha huquqlar himoyalangan.",

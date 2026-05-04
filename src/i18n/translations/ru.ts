@@ -70,7 +70,7 @@ export const ru: TranslationKeys = {
     deliveryPhone: '+998 88 888 09 09',
     hours: 'Часы работы: 10:00 — 23:00',
     telegramBot: 'Telegram',
-    telegramChannel: 'Канал',
+    telegramContact: 'Админ',
     telegramBotLink: 'Бот',
     instagram: 'Instagram',
     copyright: "Ко'хна Чигатой. Все права защищены.",

@@ -70,7 +70,7 @@ export const en: TranslationKeys = {
     deliveryPhone: '+998 88 888 09 09',
     hours: 'Open daily: 10:00 AM — 11:00 PM',
     telegramBot: 'Telegram',
-    telegramChannel: 'Channel',
+    telegramContact: 'Admin',
     telegramBotLink: 'Bot',
     instagram: 'Instagram',
     copyright: "Ko'hna Chig'atoy. All rights reserved.",
